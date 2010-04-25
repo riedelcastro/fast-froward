@@ -1,4 +1,4 @@
-h1. Introduction
+Introduction
 
 Fast Froward is a probabilistic programming engine. It is centered around the idea of open probabilistic programming: instead of relying of a small set of building blocks (conjunctions, forall, ...), Fast Froward allows users to use an ever-expanding wide variety of constructs, such as spanning tree constraints, or cardinality formulae, provided by a set language/library designers. 
 
