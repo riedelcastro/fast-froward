@@ -3,12 +3,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.riedelcastro</groupId>
-        <artifactId>thebeast</artifactId>
+        <artifactId>fast-froward</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>thebeast-core</artifactId>
-    <name>thebeast-core</name>
-
+    <artifactId>fast-froward-examples</artifactId>
+    <name>fast-froward-examples</name>
+    <packaging>jar</packaging>
 
     <repositories>
         <repository>
@@ -27,6 +27,11 @@
     </pluginRepositories>
 
     <dependencies>
+        <dependency>
+            <groupId>org.riedelcastro</groupId>
+            <artifactId>fast-froward-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
@@ -58,8 +63,6 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>src/main/scala</sourceDirectory>
-        <testSourceDirectory>src/test/scala</testSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.scala-tools</groupId>
@@ -92,6 +95,29 @@
                         <classpathContainer>ch.epfl.lamp.sdt.launching.SCALA_CONTAINER</classpathContainer>
                     </classpathContainers>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <!--<version>2.4</version>-->
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <!-- here the phase you need -->
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/mln</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
