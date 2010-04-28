@@ -1,0 +1,35 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.riedelcastro</groupId>
+    <artifactId>thebeast</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>thebeast</name>
+    <packaging>pom</packaging>
+    <properties>
+        <scala.version>2.7.7</scala.version>
+    </properties>
+
+
+    <modules>
+        <module>thebeast-core</module>
+        <module>thebeast-apps</module>
+    </modules>
+
+    <distributionManagement>
+        <site>
+            <id>website</id>
+            <url>scp://webhost.company.com/www/website</url>
+        </site>
+    </distributionManagement>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-site-plugin</artifactId>
+                <configuration>
+                    <locales>en,fr</locales>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

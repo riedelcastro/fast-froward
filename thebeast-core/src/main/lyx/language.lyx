@@ -1,0 +1,167 @@
+#LyX 1.6.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Extendable Markov Logic (ExML)
+\end_layout
+
+\begin_layout Abstract
+
+\end_layout
+
+\begin_layout Abstract
+Probabilistic Programming Languages can a) declaritively define a scoring/probab
+ility function over possible worlds, b) declaratively define a generative
+ process of possible worlds or c) imparatively / implicitely define scoring
+ a function.
+ Markov Logic can be seen as one instance of the first case.
+ In recent years many approaches of b and c have been presented (factorie,
+ church, figaro,blog) that differ ML not only because of the paradigm, but
+ also in the way they allow a much richer set of models (functions,) and
+ are more integrated with modern programming language.
+ These language allow possible worlds to be functional, continious etc.
+ In this paper we present a declarative scoring language that closes this
+ gap.
+ It allows designers to write very expressive scoring functions over possible
+ worlds (including functions, complex variables/structures, arbitary real
+ valued features).
+ Since inference in the presence of generic scoring functions is hard, we
+ allow scoring functions (or parts of it) to provide they own inference
+ implementations.
+ This gives the designer easy hooks for dramatically speeding up inference,
+ and moves ML closer to languages such as FACTORIE.
+ 
+\end_layout
+
+\begin_layout LyX-Code
+val Mentions = PossibleSpansInDocument(doc)
+\end_layout
+
+\begin_layout LyX-Code
+val Entities = AnonymousConstants() 
+\end_layout
+
+\begin_layout LyX-Code
+val mentionOf = 
+\begin_inset Quotes eld
+\end_inset
+
+mentionOf
+\begin_inset Quotes erd
+\end_inset
+
+ in Mention -> Entities
+\end_layout
+
+\begin_layout LyX-Code
+model = 0 + 
+\end_layout
+
+\begin_layout LyX-Code
++ forall(Mentions,Mentions) {(m1,m2) -> $(mentionOf(m1) == mentionOf(m2))
+ * w_a dot feature(m1,m2)} 
+\end_layout
+
+\begin_layout LyX-Code
++ forall(Mentions,Mentions) {(m1,m2) -> $(mentionOf(m1) != mentionOf(m2))
+ * w_r dot feature(m1,m2)} 
+\end_layout
+
+\begin_layout LyX-Code
+val y = new Env
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+
+\end_layout
+
+\begin_layout LyX-Code
+Constant[T](c:T)  extends Term[T]
+\end_layout
+
+\begin_layout LyX-Code
+val Persons = List(Anna,Peter ...)
+\end_layout
+
+\begin_layout LyX-Code
+val name = 
+\begin_inset Quotes eld
+\end_inset
+
+name
+\begin_inset Quotes erd
+\end_inset
+
+ in Person -> String
+\end_layout
+
+\begin_layout LyX-Code
+val age = 
+\begin_inset Quotes eld
+\end_inset
+
+age
+\begin_inset Quotes erd
+\end_inset
+
+ in Person -> Int
+\end_layout
+
+\begin_layout LyX-Code
+val persons = new SetOf[Person]
+\end_layout
+
+\begin_layout LyX-Code
+val personVariable = in Persons[Person] 
+\end_layout
+
+\end_body
+\end_document

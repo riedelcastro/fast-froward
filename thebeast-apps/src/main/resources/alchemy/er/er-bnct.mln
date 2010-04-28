@@ -1,0 +1,77 @@
+// 
+// --- predicates 
+// 
+Author(bib,author)
+Title(bib,title)
+Venue(bib,venue)
+SameBib(bib,bib)
+SameAuthor(author,author)
+SameTitle(title,title)
+SameVenue(venue,venue)
+
+HasWordAuthor(author, word)
+HasWordTitle(title, word)
+HasWordVenue(venue, word)
+
+//############################################################################ 
+//### single Predicate rules  
+//############################################################################ 
+ 
+!SameBib(b1,b2)
+!SameAuthor(a1,a2)
+!SameTitle(t1,t2)
+!SameVenue(v1,v2)
+
+//############################################################################ 
+//### transitive closure rules  
+//############################################################################ 
+ 
+SameBib(b1,b2) ^ SameBib(b2,b3) => SameBib(b1,b3)
+SameAuthor(a1,a2) ^ SameAuthor(a2,a3) => SameAuthor(a1,a3)
+SameTitle(t1,t2) ^ SameTitle(t2,t3) => SameTitle(t1,t3)
+SameVenue(v1,v2) ^ SameVenue(v2,v3) => SameVenue(v1,v3)
+
+//############################################################################ 
+//### rules connecting attribute match predicates to class match predicates   
+//############################################################################ 
+ 
+Author(bc1,a1) ^ Author(bc2,a2) ^ SameAuthor(a1,a2) => SameBib(bc1,bc2) 
+Title(bc1,t1) ^ Title(bc2,t2) ^ SameTitle(t1,t2) => SameBib(bc1,bc2) 
+Venue(bc1,v1) ^ Venue(bc2,v2) ^ SameVenue(v1,v2) => SameBib(bc1,bc2) 
+
+Author(bc1,a1) ^ Author(bc2,a2) ^ SameBib(bc1,bc2) => SameAuthor(a1,a2) 
+Title(bc1,t1) ^ Title(bc2,t2) ^ SameBib(bc1,bc2) => SameTitle(t1,t2) 
+Venue(bc1,v1) ^ Venue(bc2,v2) ^ SameBib(bc1,bc2) => SameVenue(v1,v2) 
+
+
+//############################################################################ 
+//### rules connecting evidence predicates to attr match predicates 
+//############################################################################ 
+HasWordAuthor(a1, +w) ^ HasWordAuthor(a2, +w) => SameAuthor(a1, a2)
+!HasWordAuthor(a1, +w) ^ HasWordAuthor(a2, +w) => SameAuthor(a1, a2)
+HasWordAuthor(a1, +w) ^ !HasWordAuthor(a2, +w) => SameAuthor(a1, a2)
+
+HasWordTitle(a1, +w) ^ HasWordTitle(a2, +w) => SameTitle(a1, a2)
+!HasWordTitle(a1, +w) ^ HasWordTitle(a2, +w) => SameTitle(a1, a2)
+HasWordTitle(a1, +w) ^ !HasWordTitle(a2, +w) => SameTitle(a1, a2)
+
+HasWordVenue(a1, +w) ^ HasWordVenue(a2, +w) => SameVenue(a1, a2)
+!HasWordVenue(a1, +w) ^ HasWordVenue(a2, +w) => SameVenue(a1, a2)
+HasWordVenue(a1, +w) ^ !HasWordVenue(a2, +w) => SameVenue(a1, a2)
+
+
+//############################################################################ 
+//### rules connecting the class predicates directly to evidence predicates 
+//############################################################################ 
+Author(bc1, a1) ^ Author(bc2, a2) ^ HasWordAuthor(a1, +w) ^ HasWordAuthor(a2, +w) => SameBib(bc1, bc2)
+Author(bc1, a1) ^ Author(bc2, a2) ^ !HasWordAuthor(a1, +w) ^ HasWordAuthor(a2, +w) => SameBib(bc1, bc2)
+Author(bc1, a1) ^ Author(bc2, a2) ^ HasWordAuthor(a1, +w) ^ !HasWordAuthor(a2, +w) => SameBib(bc1, bc2)
+
+Title(bc1, t1) ^ Title(bc2, t2) ^ HasWordTitle(t1, +w) ^ HasWordTitle(t2, +w) => SameBib(bc1, bc2)
+Title(bc1, t1) ^ Title(bc2, t2) ^ !HasWordTitle(t1, +w) ^ HasWordTitle(t2, +w) => SameBib(bc1, bc2)
+Title(bc1, t1) ^ Title(bc2, t2) ^ HasWordTitle(t1, +w) ^ !HasWordTitle(t2, +w) => SameBib(bc1, bc2)
+
+Venue(bc1, v1) ^ Venue(bc2, v2) ^ HasWordVenue(v1, +w) ^ HasWordVenue(v2, +w) => SameBib(bc1, bc2)
+Venue(bc1, v1) ^ Venue(bc2, v2) ^ !HasWordVenue(v1, +w) ^ HasWordVenue(v2, +w) => SameBib(bc1, bc2)
+Venue(bc1, v1) ^ Venue(bc2, v2) ^ HasWordVenue(v1, +w) ^ !HasWordVenue(v2, +w) => SameBib(bc1, bc2)
+

@@ -1,0 +1,4059 @@
+#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\newcommand{\lang}{\noun{DFacto}}
+%\newcommand{\lang}{\noun{Def Maam}}
+\end_preamble
+\use_default_options true
+\begin_modules
+theorems-ams
+theorems-ams-extended
+\end_modules
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\spacing single
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks false
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\y}{\mathbf{y}}
+\end_inset
+
+
+\begin_inset FormulaMacro
+\newcommand{\prob}{p}
+\end_inset
+
+
+\begin_inset FormulaMacro
+\newcommand{\Yvar}{\mathbf{Y}}
+\end_inset
+
+
+\begin_inset FormulaMacro
+\newcommand{\boldc}{\mathbf{c}}
+\end_inset
+
+
+\begin_inset FormulaMacro
+\newcommand{\Y}{\mathcal{Y}}
+\end_inset
+
+
+\begin_inset FormulaMacro
+\renewcommand{\O}{\mathcal{O}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Title
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+: An Open Architecture for Declarative Factor Graphs 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Abstract
+[write a short descriptions of bazaar type prob languages, how we implement
+ such a bazaar, and how this helped us to improve compactness and efficiency]
+\end_layout
+
+\begin_layout Abstract
+At the same time, it remains in flux: new language concepts are constantly
+ introduced (blocking, weight constraints, cardinality).
+ Many of them are actually not increasing the actual expressivity but make
+ inference easier.
+ 
+\end_layout
+
+\begin_layout Abstract
+This suggests a language/framework that accomodates for new extensions or
+ subsets to the language while re-using a maximal amount of existing infrastruct
+ure.
+ 
+\end_layout
+
+\begin_layout Abstract
+We therefore propose 
+\noun on
+Extendable Markov Logic
+\noun default
+, a language that centers around variables, possible worlds and the notion
+ of scoring or prob functions over possible worlds.
+ In Ex Markov Logic the developer gets to compose these prob functions.
+ The core ML building blocks are quantifications, boolean connectives and
+ indicator functions that map boolean values to real values.
+ These allow to reproduce Markov Logic in a very intuitive fashion.
+ 
+\end_layout
+
+\begin_layout Abstract
+However, the core feature of ExML is that it allows us to readily define
+ new building blocks of scoring functions.
+ This can be used to directly implement blocking etc.
+ It can also be used to introduce novel blocks, such as cardinality constraints,
+ or acyclicity constraints.
+ 
+\end_layout
+
+\end_inset
+
+Declarative FACTOrgraph Scoring Template Definitions, Markovian Dog/EFX
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+Tension: more expressive languages -> less efficient (guaranteed) inference.
+\end_layout
+
+\end_inset
+
+Markov Logic
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "richardson06markov"
+
+\end_inset
+
+ is one of the most prominent and sucessful Statistical Relational Learning
+ Languages to date.
+ It has been successfully applied to various tasks in AI such as forms of
+ semantic parsing
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "meza09jointly"
+
+\end_inset
+
+, coreference resolution
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "poon08joint"
+
+\end_inset
+
+, and disease prediction, to name just a few.
+ One of the great merits of Markov Logic is its declarative nature: users
+ specify their model structure using weighted first order logic formulae,
+ inference and learning on the other hand are provided by the Markov Logic
+ interpreter.
+ 
+\end_layout
+
+\begin_layout Standard
+The declarative aspect of Markvo Logic can greatly reduce the amount of
+ engineering necessary to build a effective Machine Learning application,
+ and lead to more comprehensible models.
+ Moreover, in theory, it does not require the user to understand complex
+ Machine Learning algorithms and theory in order to make use of them.
+ In this sense Markov Logic serves as interface between Applications and
+ Machine Learning technology, just as SQL serves as interface between applicatio
+ns and Database technology
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "domingos07structured"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+However, Markov Logic in its current form has two limitations we believe
+ to hinder its further adaption.
+ First, many interesting and effective probabilistic models fall outside
+ of the scope of efficient generic inference.
+ For example, models of spanning trees are effectively intractable with
+ current inference mechanisms.
+ Second, often first order logic is an
+\series bold
+ 
+\series default
+inconvienent formalism for some of our declarative knowledge.
+ For example, it is possible to formulate cardinality constraints in FOL,
+ but this is generally awkward.
+ 
+\end_layout
+
+\begin_layout Standard
+Here we propose 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+, an extension to Markov Logic that seeks to overcome these limitations.
+ Its distinguishing feature is an 
+\series bold
+open-ended
+\series default
+ design:
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+This is inspired by a general trend  in software engineering and programming
+ language design: from so-called 
+\emph on
+cathedrals
+\emph default
+---software or languages that are designed, often under great efforts, once
+ and for all---to 
+\emph on
+bazaars
+\emph default
+---software that is constantly extended and adapted to meet the needs of
+ user in practice
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "raymond99cathedral,steele99growing"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\end_inset
+
+ library designers can extend the set of terms to use within formulae, and
+ provide custom made hooks for efficient inference when these terms are
+ present.
+ This is achieved within an 
+\series bold
+object oriented
+\series default
+ framework in which new types of factors (or terms in general) are represented
+ through a 
+\family typewriter
+Term
+\family default
+/
+\family typewriter
+Factor
+\family default
+ class.
+ This class carries the semantics of the term or factor, as specified through
+ a mapping from possible worlds to real values (or arbitrary values for
+ general terms).
+ Crucially, it also provides any tailor-made inference routines we associate
+ with the term or factor.
+ 
+\end_layout
+
+\begin_layout Standard
+For example, in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ we can extend an MLN for dependency parsing
+\end_layout
+
+\begin_layout LyX-Code
+word(x,the) ^ word(y,man) => link(x,y) [0.12]
+\end_layout
+
+\begin_layout LyX-Code
+pos(x,DT) ^ pos(y,NN) => link(x,y) [4.2]
+\end_layout
+
+\begin_layout Standard
+with a 
+\end_layout
+
+\begin_layout LyX-Code
+spanningTree(link)
+\end_layout
+
+\begin_layout Standard
+constraint that declares 
+\family typewriter
+link
+\family default
+ to be a spanning tree.
+ Since such a constraint amounts to a factor with very large arity (
+\begin_inset Formula $\O\left(n^{2}\right)$
+\end_inset
+
+) in the factor graph, we also provide an efficient algorithm to calculate
+ the messages this factor sends out during Belief Propagation inference
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "smith08dependency"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+We can also introduce cardinality factors such as the deterministic 
+\end_layout
+
+\begin_layout LyX-Code
+|student:isSupervisor(professor, student)| <= 6
+\end_layout
+
+\begin_layout Standard
+that forbids syntactic heads with more than six modifiers; for these terms
+ we can again provide efficient message passing routines, as well as more
+ compact representations of these terms within Integer Linear Programs.
+ Such terms allow models to be 
+\emph on
+more compact and concise
+\emph default
+, and inference to be 
+\emph on
+more efficient
+\emph default
+.
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+In practice, however, the declarative nature of Markov Logic is both a blessing
+ and a curse.
+ While most models of interest can be compactly expressed/described in Markov
+ Logic, inference (and therefore learning) is generally intractable for
+ all but a small subset of these.
+ And while many practically relevant models fall into this set (see all
+ successful applications of Markov Logic), many others do not.
+ Moroever, even when models are practical, they often do not scale up or
+ are not efficient enough to be used in actual applications.
+ For example, it is possible to design a syntactic dependency parser within
+ Markov Logic, but even a relatively simple MLN (see section #) for this
+ task requires X minutes of inference during parsing, and the results are
+ not even accurate.
+ [name some more scaling up problems]
+\end_layout
+
+\begin_layout Plain Layout
+Dependency parsing example
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+dependency(h1,m) ^ dependency(h2,m) => h1=h2
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+//to enforce unique heads
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+m > 0 => exists h: dependency(h,m)
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+every non-root has a head
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+dependency(h,m) => ancestor(h,m)
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+head is an ancestor
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+dependency(h,m) ^ ancestor(a,h) => ancestor(a,m)
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+heads of ancestors are ancestors
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+ancestor(a,c) => !ancestor(c,a)
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+no loops in the graph
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+There are at least two approaches to tackle this problem.
+ First, we can strive to futher improve and design generic inference methods
+ that scale up better
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "singla06memory,riedel08improving,singla08lifted"
+
+\end_inset
+
+.
+ This is surely important, and has lead to dramatic speed ups and extented
+ the limit of what is possible with Markov Logic.
+ However, they are still many problem instances these methods work poorly
+ for, both in terms of speed and accuracy.
+ Again, depependency parsing is such a problem---even with state-of-the-art
+ models inference does not scale well here [see results].
+ 
+\end_layout
+
+\begin_layout Plain Layout
+Second, we can seek to exploit tailor-made inference routines whenever possible
+ (compiler optimization).
+ For example, in dependency parsing the complexity arises from enforcing
+ a spanning tree constraints on parse structures.
+ However, it has been shown how to perform dependency parsing with such
+ constraints in Belief Propagation
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "smith08dependency"
+
+\end_inset
+
+.
+ They key here is to use specialized dynamic programs within BP that calculate
+ the messages for a global 
+\begin_inset Quotes eld
+\end_inset
+
+spanning tree
+\begin_inset Quotes erd
+\end_inset
+
+ factor with 
+\begin_inset Formula $n^{2}$
+\end_inset
+
+ neighbors in the factor graph.
+ We could exploit such kind of techniques by first identifying sets of formulaes
+ that correspond to tractable structure in factor graphs, and then replace
+ the generic inference operations associated these formulas by a specialized
+ routines.
+\end_layout
+
+\begin_layout Plain Layout
+The idea of exploiting tailor-made inference holds great promise---they
+ are several constraints, factors that lend themselves well to specialized
+ treatment in various kinds of inference methods
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Duchi07usingcombinatorial"
+
+\end_inset
+
+(mention better LP formulations).
+ However, the idea of automatically recognizing such constraints/factors
+ in declarative specifications of factor graphs is somewhat problematic.
+ In the above case there are several different approaches to encode spanning
+ trees in logic
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "cussens08bayesian"
+
+\end_inset
+
+.
+ And even for the one we show above the are several equivalent formulations.
+ Full coverage of all these cases requires a lot of engineering (even possible?)
+, and without this coverage the interpreter the user needs to carefully
+ tune his model to ##
+\end_layout
+
+\begin_layout Plain Layout
+Here we therefore want exploit tailor-made inference, but instead of automatical
+ly detecting suitable structure in our declarative specifications, we propose
+ to
+\emph on
+ extend the language
+\emph default
+ for such cases.
+ For example, instead of hoping to catch spanning tree specifications in
+ generic Markov Logic, we introduce a new isSpanningTree language construct
+ that can be used like 
+\begin_inset Quotes eld
+\end_inset
+
+isSpanningTree(dependency)
+\begin_inset Quotes erd
+\end_inset
+
+.
+ In inference method that support this, we then use optimized routines for
+ this.
+ Note that this also leads to more compact and less error prone models,
+ because users can replace 5 formulae above using just one statement.
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+While a similar object oriented approach has been followed in Figaro
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "pfeffer09figaro"
+
+\end_inset
+
+, and FACTORIE
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "mccallum08factorie"
+
+\end_inset
+
+, our focus is different.
+ We emphasize 
+\series bold
+undirected
+\series default
+ models (while Figaro focuses on directed models), and 
+\series bold
+declarative
+\series default
+ representations (while FACTORIE focuses imperative constructs).
+ Moreover, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ is the first object oriented approach based on
+\series bold
+\emph on
+ 
+\emph default
+the encapsulation of inference in factors
+\series default
+, as opposed to variables (see figaro and FACTORIE), or outside model specificat
+ion as application dependent code (see FACTORIE).
+ This enables an open-ended set of factor types that can be declaratively
+ composed and still allow for efficient inference.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+[needs more explanation, mention 
+\begin_inset Quotes eld
+\end_inset
+
+maximal reuse
+\begin_inset Quotes erd
+\end_inset
+
+ of inference, clean separation of model (in factors+inference) and data]
+\end_layout
+
+\end_inset
+
+
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ follows Markov Logic in relying on 
+\emph on
+composition
+\emph default
+ and 
+\emph on
+quantification
+\emph default
+ as main paradigms to construct 
+\emph on
+undirected
+\emph default
+ probabilistic models over possible worlds.
+ It extends Markov Logic in the sense that we not only allow query predicates
+ but general query 
+\emph on
+functions
+\emph default
+.
+ In finite domains this does not extend the expressiveness of the language
+ but often leads to a more natural representation.
+ Also, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ is a higher order language in the sense that functions can themselves be
+ arguments of other functions.
+ This is required when we want make statements such as 
+\begin_inset Quotes eld
+\end_inset
+
+
+\family typewriter
+isSpanningTree(link)
+\family default
+
+\begin_inset Quotes erd
+\end_inset
+
+ to declare the predicate 
+\family typewriter
+link
+\family default
+ to be a spanning tree.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+Its openness is achieved through a 
+\family typewriter
+Term
+\family default
+ interface that extension designers can implement in order to introduce
+ new building blocks.
+ A 
+\family typewriter
+Term
+\family default
+ class encapsulates the syntax, semantics, and specialized inference routines
+ associated with a term in the language.
+ Example terms are logical connectives, quantified operations and the iverson
+ bracket, as well as more complicated constraints such as the spanning tree
+ constraint mentioned above.
+ The semantics of each term are defined by implementing a mapping from possible
+ world to the value of a term.
+ Inference hooks for certain type of terms can be fast dynamic programs
+ to calculate outgoing messages in Sum-Product or Max-Product Belief Propagation
+, as well as compact representations of the term within (Integer) Linear
+ Programs.
+\end_layout
+
+\begin_layout Plain Layout
+[Scala] Term classes, and formulae themselves, are realized in Scala
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "odersky08programming"
+
+\end_inset
+
+, an hybrid object-oriented/functional languages that is fully interoperable
+ with Java.
+ ##weak This means that users can make use of library extensions by simply
+ importing the corresponding scala libraries into their projects.
+ ##In this sense we follow two recent probabilistic programming languages,
+ Figaro and Factorie.
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+To minimize the complexity involved in extending a language (such as Markov
+ Logic) with specific implementations within a host language (such as C++),
+ we follow to recent probabilistic programming languages, Figaro and Factorie,
+ and implement 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ as a Domain Specific Language in Scala
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "odersky08programming"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+Crucially, however, we do not propose to introduce a new language for every
+ special type of constraint or factor that may seem useful for some applications.
+ Instead, we seek to provide an open architecture that supports, and encourages,
+ the extension of Markov Logic with new language constructs and corresponding
+ tailor-made inference methods.
+ 
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+Otherwise we end up with languages such as 
+\begin_inset Quotes eld
+\end_inset
+
+Markov Logic + Spannings Trees
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+Markov Logic + cardinality constraints
+\begin_inset Quotes erd
+\end_inset
+
+, etc.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+Markov Logic networks for 
+\end_layout
+
+\begin_layout Plain Layout
+it is well known that we can efficiently do Belief Propagation for Dependency
+ Parsing as long as we 
+\end_layout
+
+\begin_layout Plain Layout
+Second, we can partially reject the idea of declarative model design and
+ black-box inference and learning.
+ For example, there exist well-established and efficient inference methods
+ for dependency parsing, and hence we could allow the designer to replace
+ the general inference engine with one of these methods.
+ This requires additional implementation efforts, but still saves the user
+ from implementing other machinery and infrastructure, such as learning
+ methods or factor graph operation[##what?].
+ 
+\end_layout
+
+\begin_layout Plain Layout
+This raises the question: can we incorporate tailor-made inference while
+ still remaining declarative and concise? If we are just looking at the
+ spanning tree constraint, this would be easy.
+ We just introduce yet another SRL language, say 
+\begin_inset Quotes eld
+\end_inset
+
+Markov Logic + Trees
+\begin_inset Quotes erd
+\end_inset
+
+ (MLT), and provide a new language construct, say 
+\begin_inset Quotes eld
+\end_inset
+
+<nameOfBinaryPredicate> is spanningTree
+\begin_inset Quotes erd
+\end_inset
+
+.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Note that this construction is provided in the MLN implementation thebeast
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+\begin_inset CommandInset citation
+LatexCommand cite
+key "thebeast"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+ When implementing the interpreter for this language, we then exploit spanning
+ tree inference methods within some more general divide-and-conquer inference
+ frameworks (see more about this below).
+ While this may not be such a bad idea---spanning trees appear in several
+ AI areas and applications such as vision and clustering---it is clear that
+ this just calls for the next variant, 
+\begin_inset Quotes eld
+\end_inset
+
+Markov Logic + Trees + matching constraints
+\begin_inset Quotes erd
+\end_inset
+
+ (MLTMC) that provides special support for matching constraints [cite koller
+ max product work], or 
+\begin_inset Quotes eld
+\end_inset
+
+Markov Logic + Cardinality constraints
+\begin_inset Quotes erd
+\end_inset
+
+ etc.
+ etc.
+ [why is this bad?]
+\end_layout
+
+\end_inset
+
+This is in line with a general trend in software engineering and programming
+ language design from so-called cathedrals---software or languages that
+ are designed, often under great efforts, once and for all---and bazaars---softw
+are that is constantly extended and adapted to meet the needs of user in
+ practice
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "raymond99cathedral,steele99growing"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\end_inset
+
+
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+Our proposed framework, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+, is similar in spirt to Markov Logic, and in fact contains it as a special
+ case.
+ It uses the notions of 
+\emph on
+quantification
+\emph default
+ and 
+\emph on
+composition
+\emph default
+ to construct scoring functions or probability distributions over possible
+ worlds.
+ However, instead of providing a fixed set of logical connectives and quantifier
+s, in its core it specifices an interface for new language building blocks,
+ or 
+\emph on
+terms
+\emph default
+.
+ (##And provides func.
+ composition This interface provides the general interpreter with everything
+ it needs to know about the building block, including its semantics, contained
+ variables and how to treat it within different inference algorithsm such
+ as BP, Linear Programming etc.).
+ 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ is also related to factorie
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "mccallum08factorie"
+
+\end_inset
+
+, an 
+\emph on
+imperative
+\emph default
+ probabilistic programming language.
+ Like factorie, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ seeks to exploit our knowledge of inference for certain types of factor
+ graph.
+ However, while users in factorie construct models primarily using concepts
+ from programming such as classes, methods, control flow, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+'s modelling paradigm is primarily composition and quantification, just
+ as in Markov Logic.
+ That is, the average user declaratively constructs formula composed of
+ terms and quantification.
+ Machine Learning researchers on the other hand can extend the language
+ easily, by providing new terms with well defined declarative semantics.
+ We believe that this makes models more concise, easy to describe and comprehend
+ (no inspection of code necessary) and safer---factorie on the other hand
+ gives more flexibility.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+Finally, we will see that models in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ are similar to the expressions used in recent functional probabilistic
+ programming languages such as Church or Figaro.
+ However, the difference lies in the meaning of such expressions: here a
+ term is always deterministic, but can describe a probabilitity distribution
+ over possible words.
+ In Church terms represent random variables one can draw samples from.
+ In other words, we define a declarative but deterministic function over
+ possible worlds---as in undirected graphical models---while they define
+ a generative story.
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+[Mention feature/language construct creep in alchemy]
+\end_layout
+
+\begin_layout Plain Layout
+[Talk about results in terms of efficiency and expressiveness]
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In the following we will first introduce the concepts and constructs of
+ our language/library, and then show the advantages of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ in the context of two applications: dependency parsing and ##.
+ In both we show (a) the increased compactness of our models in contrast
+ to Markov Logic, and more crucially, (b) the increased efficiency we achieve
+ by allowing for tailor-made inference routines tied to our language extensions.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+Introduction (Bazaar)
+\end_layout
+
+\begin_layout Plain Layout
+In Programming, and Programming Language Design, we often speak of two competing
+ metaphors: the cathedral and the bazaar
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "raymond99cathedral,steele99growing"
+
+\end_inset
+
+.
+ The former is a near-perfect building that, designed by only a handful
+ of architects, takes a long time to built and stays unchanged forever.
+ The latter is constantly evolving and extended by its users.
+ In recent years software development practices as well as language design
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "odersky08programming"
+
+\end_inset
+
+ has shifted attention to the Bazaar---primarily because it allows a program
+ or language to grow with the ever changing needs of its users instead of
+ trying to anticipate these in advance.
+ (This has lead to very successful projects such as Linux, firefox etc.)
+\end_layout
+
+\begin_layout Plain Layout
+In this paper we argue that Markov Logic
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "richardson06markov"
+
+\end_inset
+
+, to date one of the most widely applied probabilistic programming languages,
+ is inherintely a cathedral, and should be made a Bazaar.
+ We see it as a cathedral because it only provides very limited possibilities
+ for users to extend the language---users can provide static functions such
+ as 
+\begin_inset Quotes eld
+\end_inset
+
+string-edit distance
+\begin_inset Quotes erd
+\end_inset
+
+ but cannot extend the set of primitive types of formulae
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Note that while it has been evolving (addition of the plus notation, exclamation
+ marks, blocking) and extended (to Hybrid Markov Logic Networks, or Decision
+ Process MLNs) this evolution has either been quite adhoc, or required to
+ change syntax and semantics the language.
+ To remain in the above methaphor: the cathedral 
+\end_layout
+
+\end_inset
+
+.
+ And it should be a Bazaar: a language whose very essence is to grow, change
+ and which allows this growth to be triggered and controlled by its users,
+ as opposed to a small set of language designer.
+\end_layout
+
+\begin_layout Plain Layout
+Let us become more concrete.
+ Assume a Natural Language Processing (NLP) researcher that designs a joint
+ pos tagging and dependency parsing model within Markov Logic.
+ She represents the words with a binary 
+\family typewriter
+word(Token,Word)
+\family default
+ predicate and starts to design a simple pos tager by introducing a predicate
+ 
+\family typewriter
+pos(Token,Pos)
+\family default
+, and a well-designed set of formulae that describe the rough relation between
+ words, their neighborhoods, and their PoS tags.
+ For example:
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Plus notation:
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+word(t,+w) => pos(t,+p)
+\end_layout
+
+\begin_layout Plain Layout
+She goes on to design dependency parse tree model over the tokens of a sentence
+ (see figure).
+ She chooses a dependency(Token,Token) predicate to represent such a tree.
+ She would add formulae that relate pos tags and words to dependency predicates.
+ Moreover, in order to enforce dependency to be a spanning tree she needs
+ to both introduce an additional predicate and write down a range of formulae:
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+dependency(h1,m) ^ dependency(h2,m) => h1=h2
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+//to enforce unique heads
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+m > 0 => exists h: dependency(h,m)
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+every non-root has a head
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+dependency(h,m) => ancestor(h,m)
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+head is an ancestor
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+dependency(h,m) ^ ancestor(a,h) => ancestor(a,m)
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+heads of ancestors are ancestors
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+ancestor(a,c) => !ancestor(c,a)
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\size footnotesize
+no loops in the graph
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+Note that while there are other ways to represent the Spanning tree constraint[c
+ite cussens], they all require an equal amount of formulae and the addition
+ of an auxiliarly predicate.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+In this scenario we see three problems (ordered by increasing severness)
+ with the Markov Logic cathedral:
+\end_layout
+
+\begin_layout Plain Layout
+First, Spanning trees appear in several AI applications, such as vision
+ (for object graphs), clustering (for hierarchical clusters) and many more.
+ Each researcher that needs these spanning tree constraints need to cwrite
+ them up himself.
+ This leads to
+\series bold
+ more bugs, more clutter
+\series default
+ in models.
+ If 
+\begin_inset Quotes eld
+\end_inset
+
+spanning tree
+\begin_inset Quotes erd
+\end_inset
+
+ was a language primitive (
+\family typewriter
+spanningTree(dependency)
+\family default
+), this problem would disappear.
+ However, it seems surely wrong to add primitives for each of such cases
+ and present a new Language.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+Second, after our researcher has carefully designed this model and tested
+ it, other researchers want to reuse this model in their own Information
+ Extraction model as a black box.
+ In this case they need to copy all formulae of this model, and do a copy
+ and replace of any predicates that may have different names.
+ Programming Languages tell us that this type of 
+\series bold
+code duplication
+\series default
+ is bad.
+ If 
+\begin_inset Quotes eld
+\end_inset
+
+tagAndDep
+\begin_inset Quotes erd
+\end_inset
+
+ could become a primitive of Markov Logic this problem disappears.
+\end_layout
+
+\begin_layout Plain Layout
+Finally, and most crucially, the model is 
+\series bold
+not tractable
+\series default
+ with current Markov Logic inference methods (see experiments).
+ However, if we had a spanning tree language construct we could provide
+ specialized inference methods for this model substructure
+\begin_inset space ~
+\end_inset
+
+(cite David, ) and use them in a composible inference method such as BP.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+In the following we show how we generalize Markov Logic to become more of
+ a Bazaar, and less of Cathedral.
+ In essence, we want it to be easy to introduce constructs such as spanningTree(
+dependency) and jointTagger(word,pos,dependency), and provide optimized
+ inference methods for such constructs that can be seamlessly combined with
+ other constructs of the language.
+ We do so by a) using a Functional/Higher Order Logic/Simple Type Theory
+ semantics, (b) using compositional inference methods that can treat factors
+ as black boxes, and (b) using Scala as glue and platform (this allows users
+ to.
+ We demonstrate the effectiveness of our approach by comparing DP in Markov
+ Logic with DP in ExML.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+Note that languages such as Church
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "goodman08church"
+
+\end_inset
+
+ or Blog are naturally Bazaars because due to their functional design.
+ However, they are generative, and use expression to denote generative models.
+ Our work follows the spirit of Markov Logic and defines factor graphs (scoring
+ functions over possible worlds).
+ Also, they don't focus on more efficient inference for special made constructs.
+ Our language is also close in spirit to Factorie, but inherently declarative.
+ Also related to Learning-Based Java.
+\end_layout
+
+\end_inset
+
+
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+[go on to build full NLP system, then show problems: other people want to
+ use spanning trees (small problem), other people want to use NLP model
+ (bigger problem: replace all predicates), model not tractable (biggest
+ problem) ]
+\end_layout
+
+\begin_layout Plain Layout
+Now there are at least two problems with this:
+\end_layout
+
+\begin_layout Itemize
+This model is not tractable in Markov Logic (see experiments)---it creates
+ ground networks that are hard to solve with any of the existing MLN approaches.
+ 
+\end_layout
+
+\begin_layout Itemize
+Everyone who needs a spanning tree needs to reproduce these formulae (such
+ as vision researchers, hierarchical classification, etc.) in one way of
+ another.
+ This leads to clutter and more complicated model files (weak).
+\end_layout
+
+\begin_layout Plain Layout
+Now assume someone in vision who is developing a object reconstruction model
+ with MLN.
+ He too follows a spanning tree approach to represent the hierarchical object
+ graph.
+ Hence part of his model looks like what we have seen above---they only
+ difference being a predicate 
+\begin_inset Quotes eld
+\end_inset
+
+parent
+\begin_inset Quotes erd
+\end_inset
+
+ used instead of dependency.
+ In a cathedral, and in Markov Logic, he would have to write the same set
+ of formulae again, along with the addition of extra predicates.
+ And the same would hold for someone in hierarchical clustering, etc.
+ pp.
+ In a bazaar, he would simply write 
+\end_layout
+
+\begin_layout LyX-Code
+spanningTree(parent)
+\end_layout
+
+\begin_layout Plain Layout
+because someone (the NLP researcher?) provided the primitve (or primitive-like)
+ 
+\family typewriter
+spanningTree
+\family default
+ before.
+ [Mention 
+\end_layout
+
+\begin_layout Plain Layout
+Now why is good? On the surface, we have just reduced 5 formulae to one.
+ 
+\end_layout
+
+\begin_layout Itemize
+more compact models, reuse of models in other contexts (factor out dependency
+ parser, tagger etc.)
+\end_layout
+
+\begin_layout Itemize
+provide useful/sensible/intuitive/NATURAL units of optimization 
+\end_layout
+
+\begin_layout Itemize
+models capture and focus on the application specific structure, not on those
+ parts which are generally found in many models.
+\end_layout
+
+\begin_layout Plain Layout
+How to turn into Bazaar? We turn ML into an Bazaar by (a) generalizing to
+ Simple Type Theory/Higher order logic, focussing on inference and learning
+ which interact with new language constructs in a black box fashion, and
+ (c) embedding it into a growable-Bazaar like deterministic programming
+ language (Scala).
+\end_layout
+
+\begin_layout Plain Layout
+[Markov Logic is a probabilistic programming language, and to date the most
+ widely applied one.
+ However, it can be seen as a cathedral]
+\end_layout
+
+\begin_layout Plain Layout
+In contrast, many probabilistic programming languages can be seen as cathedrals:
+ they are often designed once with the (impossible goal) of being (a) sufficient
+ly expressive while (b) still allowing efficient inference and learning.
+ Later on they are only marginally extended to be a bit more expressive,
+ or less expressive and more efficient.
+ Languages such as Markov Logic RMNs, Bayesian Logic Programs, Prism can
+ be seen as such cathedrals.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+[now focus on Markov Logic] We believe that the time is ripe for a bazaar-type
+ Markov Logic-like probabilistic programming language that allows users
+ to introduce new constructions/expressions.
+ This belief stems from the following observations:
+\end_layout
+
+\begin_layout Itemize
+Many probabilistic models contain identical sub-structure (e.g.
+ models with tree constraints, matching constraints, markov chains, tree
+ alignments).
+ By introducing 
+\begin_inset Quotes eld
+\end_inset
+
+new words into our language
+\begin_inset Quotes erd
+\end_inset
+
+ these structures can be re-used and lead to more compact and maintable
+ models.
+ 
+\end_layout
+
+\begin_layout Itemize
+There often exist specialized inference methods for such substructures that
+ can be used in methods such as belief propagation or mean field methods.
+ By allowing language users to introduce new constructions and giving them
+ the opportunity to provide tailor-made inference routines for these constructio
+ns these inference methods can be exploited.
+ (This helps the language to become an interface to a much larger set of
+ AI technology than ML claims to be)
+\end_layout
+
+\begin_layout Itemize
+One of the most successful PPL, Markov Logic, has been incrementally extended
+ over the years.
+ Extensions include blocking constraints, + notation, hybrid networks and
+ much more.
+ While these extensions have been rather adhoc and not part of the actual
+ language but of the alchemy interpreter, it shows that there is a need
+ for PPLs used in practice to grow.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+Note that languages such as Church and Blog can be seen as Bazaar type languages
+ since they are based on Lambda Calculus which naturally support growth
+ and new constructs, they do not allow for tailor made inference for new
+ constructs.
+ Moreover, these languages are generative, and constructs in the language
+ represent random variables.
+ By contrast, here we present a language in wich terms are used to compose
+ (deterministic) scoring functions over possible worlds.
+ This is along the lines of Markov Logic, parfactors or XX.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+To make this more concrete, let us consider dependency parsing, an application
+ in Natural Language Processing.
+ Here we are asked to ...
+\end_layout
+
+\begin_layout Plain Layout
+Markov Logic has been successfully applied for various tasks, and is currently
+ gaining momentum as one of the leading probababilistic programming languages.
+ This is probably due to various reasons: its expressivity, its simplicity,
+ the active development of an interpreter, etc.
+ However, when looking at the history of Markov Logic, as well as its main
+ software manifestiation, alchemy, another reason becomes apparent.
+ Markov Logic is actually a somewhat fluent, evolving language that has
+ been accomodating new constructs as see fit.
+ For example, the plus-notation, blocking syntax, hybrid markov logic, etc.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+We argue that this flexibility, or evolution, is essential for the further
+ progress of Markov Logic as interface language between applications and
+ AI technology.
+ In particular, we think that Markov Logic will need to accomodate more
+ types of constraints and expressions than predicates, conjunctions and
+ quantifications.
+ This is best exemplified in the need of tree constraint expressions.
+ While it is possible to use FOL to define a certain predicate to be a tree,
+ it generally leads to hard inference problems.
+ However, there exists a multitude of methods for inference with tree constraint
+s.
+ By default ML, as interface to AI technology, discards all this methods
+ and sees everything as clauses.
+ Another example are CPTs: while a MLN can represent each finite distribution,
+ it discards the structure both for learning and testing.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+In this work we therefore present a framework that will allow Markov Logic
+ to grow in the above presented ways: 
+\noun on
+Extendable Markov Logic
+\noun default
+ (ExML).
+ This is done by extracting what we think are the essential aspects of Markov
+ Logic: the declarative construction/assembly of scoring functions for possible
+ worlds based on quantified formulae and real valued terms over structured
+ first order variables.
+ We provide default building blocks for this assembly, but more importantly,
+ we provide interfaces and inference frameworks that allow users to add
+ new types of building blocks, such as a tree constraint.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+ExML is also closely related to factorie: here users can define factor graphs
+ (our scoring functions in our lingo) and inference/learning in these graphs
+ imperatively.
+ This enables them to realize something like a tree constraint by allowing
+ the user to plug in jump functions that preserve treeness.
+ In a way, ExML can be seen as the declarative pedant to factorie: scoring
+ functions are still declaratively composed, but the user can introduce
+ new building blocks in this construction.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+Roughly speaking, ExML allows you to write
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+sum {(i,j) => $(pos(i,
+\begin_inset Quotes erd
+\end_inset
+
+NN
+\begin_inset Quotes erd
+\end_inset
+
+) & pos(j,
+\begin_inset Quotes erd
+\end_inset
+
+DT
+\begin_inset Quotes erd
+\end_inset
+
+) ==> link(i,j)) * 2.5} + tree(link)
+\end_layout
+
+\begin_layout Plain Layout
+the first summand is essentially the log linear score of a Markov Logic
+ formula (note that $ is our shortform for the indicator function mapping
+ bools to doubles).
+ The second a new building block we defined in our framework.
+ It evaluates to 0 if the predicate link is a tree in a given possible world,
+ and 
+\begin_inset Formula $-\infty$
+\end_inset
+
+ otherwise.
+ Note that this scoring function is equivalent to 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula \[
+\sum_{i,j}\left[pos\left(i,NN\right)\wedge pos\left(j,DT\right)\Rightarrow link\left(i,j\right)\right]\cdot2.5+tree\left(link\right)\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+Here 
+\begin_inset Formula $\left[\cdot\right]$
+\end_inset
+
+ is the Iverson bracket[cite].
+\end_layout
+
+\begin_layout Plain Layout
+The first embodiement of ExML is implemented in Scala.
+ This allows us to avoid designing and own syntax for our language---all
+ expressions are realized through operator overloading and other techiques
+ within Scala.
+ It also allows tight integration and the possibility to generate templates.
+ It also makes the definition of new building blocks hassle-free.
+\end_layout
+
+\begin_layout Plain Layout
+Note that ExML also allows variables to be a) propositional, b) functions
+ (over functions) and c) categorical values.
+ Again, while we can use ML to simulate such variables, our framework is
+ cleaner, leads to better inference (or easier to find tractable substructure).
+ 
+\end_layout
+
+\begin_layout Itemize
+relation to factorie
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Domains, Variables and Worlds
+\end_layout
+
+\begin_layout Standard
+The general task we like to solve with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ is the following.
+ We are given a set of 
+\emph on
+variables
+\emph default
+, where each variable can be of 
+\emph on
+basic
+\emph default
+ 
+\emph on
+type
+\emph default
+ or some 
+\emph on
+functional type
+\emph default
+.
+ The state or 
+\emph on
+assignment
+\emph default
+ for these variables is hidden and needs to be computed.
+ Now, instead of explicitely calculating this assignment, we provide a 
+\emph on
+scoring function
+\emph default
+, or 
+\emph on
+probability distribution
+\emph default
+ over possible assignments, and then infer the highest scoring assignment
+ (MAP), or a probabilities for each element of an assignment (marginal inference
+).
+ 
+\end_layout
+
+\begin_layout Standard
+Let us flesh this out by giving an example.
+ In dependency parsing we want to compute a function 
+\family typewriter
+dependency
+\family default
+, that maps pairs of tokens to their dependency edge label, or some empty
+ label if the token pair is not directly linked in the dependency graph.
+ However, we have no direct way of computing this function for a given sentence.
+ Instead, we give a 
+\emph on
+declarative
+\emph default
+ definition of what we think are good and bad dependency graphs by constructing
+ a scoring function over possible assignments of functions to the 
+\family typewriter
+dependency
+\family default
+ variable.
+ This scoring function will, for example, return 0 probability if the function
+ does not represent a spanning tree, and give higher probabilities for functions
+ in which dependent tokens are somewhat compatible.
+ 
+\end_layout
+
+\begin_layout Standard
+Then, at runtime, we use this scoring function to find the highest-scoring,
+ most probable parse, or marginal probabilities for each edge to be part
+ of the graph or not.
+ In the following we show how 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ supports the above workflow.
+ 
+\end_layout
+
+\begin_layout Subsection
+Domains
+\end_layout
+
+\begin_layout Standard
+As mentioned above, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ is a typed language.
+ Hence the first notion we need to introduce are types, or domains, that
+ can be associated with variables and, in general, terms of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+.
+ Note that at its heart 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ is a typed 
+\emph on
+higher order logic
+\emph default
+, or functional calculus, language
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "farmer08seven"
+
+\end_inset
+
+.
+ This means that its terms and variables can not only represent atomic objects
+ of the domain, but also functions, functions of functions, etc.
+ This is necessary when we want to say things about a function (such as
+ dependency).
+ 
+\end_layout
+
+\begin_layout Standard
+A domain in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ is a (finite) collection of values of a certain scala runtime type 
+\family typewriter
+T
+\family default
+, and is implemented through objects of class 
+\family typewriter
+Domain[T]
+\family default
+.
+ dfacto provides several 
+\family typewriter
+Domain
+\family default
+ subclasses that can be used to creates different types of domains.
+ The simplest class is 
+\family typewriter
+Values[T] (arg[T]:*) extends Domain[T]
+\family default
+ , which allows the user to explicitely define the collection of values
+ in the domain:
+\end_layout
+
+\begin_layout LyX-Code
+val DepLabels = Values('SUBJ,'OBJ,'DET)
+\end_layout
+
+\begin_layout LyX-Code
+val Persons = Values(
+\begin_inset Quotes eld
+\end_inset
+
+Anna
+\begin_inset Quotes erd
+\end_inset
+
+,
+\begin_inset Quotes erd
+\end_inset
+
+Peter
+\begin_inset Quotes erd
+\end_inset
+
+,...)
+\end_layout
+
+\begin_layout Standard
+Note that it is not necessary to define a domain exhaustively in advance---we
+ can add new values whenever needed.
+ In addition, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ provides built-in domains such as 
+\family typewriter
+Bools
+\family default
+, 
+\family typewriter
+Ints
+\family default
+ and 
+\family typewriter
+Doubles
+\family default
+, as well as subsets of these, such as 
+\family typewriter
+Doubles(0, 230.0)
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Crucially, we can also define domains that consist of all mappings/functions
+ from one domain to another.
+ This is realized through a 
+\family typewriter
+FunctionDomain[T,R] (domain:Domain[T], range:Domain[R]) extends Domain[T=>R]
+\family default
+ class that can be conveniently instantiated using 
+\family typewriter
+domain -> range
+\family default
+:
+\end_layout
+
+\begin_layout LyX-Code
+val Property = Person -> Bools
+\end_layout
+
+\begin_layout LyX-Code
+val DependencyGraph = Token x Token -> DependencyLabels
+\end_layout
+
+\begin_layout Standard
+##TupleDomain
+\end_layout
+
+\begin_layout Subsection
+Variables
+\end_layout
+
+\begin_layout Standard
+In Machine Learning we usually encounter the following setting: we need
+ to infer the state or belief about some set of variables.
+ Here variables are placeholders of objects of our domain, and we ask the
+ question 
+\begin_inset Quotes eld
+\end_inset
+
+which object in the domain should I assign to this placeholder in order
+ to maximize probability/score or (marginal)?
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ Variables are instances of the class 
+\end_layout
+
+\begin_layout LyX-Code
+
+\family typewriter
+Var[T] (name:String, domain:Domain[T]) extends Term[T]
+\end_layout
+
+\begin_layout Standard
+that is, they are named placeholders constrained by a 
+\family typewriter
+domain
+\family default
+ (and type parameter 
+\family typewriter
+T
+\family default
+).
+ For now we ask the reader overlook the superclass Term[T] and bear with
+ us until section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Terms"
+
+\end_inset
+
+.
+ Note that often we can use scala identifiers to refer to variables, and
+ hence the name can be eft out if needed.
+ 
+\end_layout
+
+\begin_layout Standard
+Typical simple type variables are 
+\end_layout
+
+\begin_layout LyX-Code
+val height = Var(Doubles(0,230.0))
+\end_layout
+
+\begin_layout LyX-Code
+val person = Var(Persons)
+\end_layout
+
+\begin_layout LyX-Code
+val pair = Var(Persons x Persons)
+\end_layout
+
+\begin_layout Standard
+Variables are also used to represent the notion of predicate as used in
+ Markov Logic.
+ A predicate is simply a variable that has a 
+\family typewriter
+FunctionDomain
+\family default
+ as type for which the range are 
+\family typewriter
+Bools
+\family default
+.
+ A simple example would be 
+\end_layout
+
+\begin_layout LyX-Code
+val dependency = Var(Tokens x Tokens -> Bools)
+\end_layout
+
+\begin_layout LyX-Code
+val friends = Var(Persons x Persons -> Bools)
+\end_layout
+
+\begin_layout Standard
+Allowing general functions as opposed to only boolean predicates also allows
+ us to write
+\end_layout
+
+\begin_layout LyX-Code
+val height = Var(Person -> Heights)
+\end_layout
+
+\begin_layout Subsection
+Worlds
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ we seek to make inferences about the possible state of the world.
+ This state is represented through instances of the class (or trait) 
+\family typewriter
+World
+\family default
+.
+ which store a mapping from variables to values in the domain.
+ 
+\family typewriter
+World
+\family default
+ has one core method, 
+\end_layout
+
+\begin_layout LyX-Code
+resolveVar[T](variable:Var[T]) : Option[T]
+\end_layout
+
+\begin_layout Standard
+that returns the value associated with the variable in the world (wrapped
+ with the 
+\family typewriter
+Option
+\family default
+ monad), or 
+\family typewriter
+None
+\family default
+ in case the world has no assignment for the given variable.
+\end_layout
+
+\begin_layout Standard
+While part of a world is inferred through probablistic inference, another
+ part is usually 
+\emph on
+observed
+\emph default
+.
+ To allows users the definition of an observed world, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ provides the notion of a 
+\family typewriter
+MutableWorld extends World
+\family default
+ for which variable assignments can be made by the user.
+ For example, users can write:
+\end_layout
+
+\begin_layout LyX-Code
+val world = new MutableWorld
+\end_layout
+
+\begin_layout LyX-Code
+world(smokes) = ClosedFunction(Anna->True) //or
+\end_layout
+
+\begin_layout LyX-Code
+world(smokes(Anna)) = true
+\end_layout
+
+\begin_layout Standard
+to create a world where 
+\family typewriter
+smokes
+\family default
+ is assigned to a function that only maps 
+\family typewriter
+Anna
+\family default
+ to 
+\family typewriter
+True
+\family default
+ (i.e.
+ a world where only 
+\family typewriter
+Anna
+\family default
+ smokes).
+\end_layout
+
+\begin_layout LyX-Code
+world(age) = Function((12,
+\begin_inset Quotes erd
+\end_inset
+
+Anna
+\begin_inset Quotes erd
+\end_inset
+
+)->true, ...) //or
+\end_layout
+
+\begin_layout LyX-Code
+world(age(12,
+\begin_inset Quotes erd
+\end_inset
+
+Anna
+\begin_inset Quotes erd
+\end_inset
+
+)) = true
+\end_layout
+
+\begin_layout Standard
+note that functions can also be point to functions.
+ 
+\end_layout
+
+\begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:Terms"
+
+\end_inset
+
+Terms and Factors
+\end_layout
+
+\begin_layout Standard
+A Markov Logic Network is a probability or score function defined over possible
+ worlds.
+ In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ we follow the same path.
+ However, while in Markov Logic (and first order logic in general) there
+ is a distinction between terms (denoting objects of the domain) and formulae
+ (boolean expressions that concern terms), in higher order logics this distincti
+on often vanishes
+\begin_inset space ~
+\end_inset
+
+[cite paper comparison of the tow].
+ Instead, a formula is simply a term with type Boolean.
+ 
+\end_layout
+
+\begin_layout Standard
+Intuitively, a term is a symbolic expression that is, given a possible world,
+ evaluated to a value.
+ In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ a term is an instance of a term class, which is a subclass of the class
+ 
+\family typewriter
+Term
+\family default
+.
+ A term can have further 
+\emph on
+subterms
+\emph default
+ and 
+\emph on
+internal data
+\emph default
+, and specifies how the internal data and evaluation results for subterms
+ are combined to a value for the term itself.
+ Note that in contrast to a Model in Figaro, a term has no elements of randomnes
+s.
+ Finally, a term is parametrized by the class of values it evaluates to---in
+ scala this amounts to a class 
+\family typewriter
+Term[T]
+\family default
+ for value type 
+\family typewriter
+T
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+A quintessential term is 
+\family typewriter
+Variable[T] (name:String) extends Term[T]
+\family default
+, which is evaluated to the value the variable is assigned to in the possible
+ world.
+ Another core term class is 
+\family typewriter
+Constant[T](value:T) extends Term[T]
+\family default
+, which is always evaluated to 
+\family typewriter
+value
+\family default
+, regardless of the given possible world.
+ Note that scala's implicit conversion feature allows us to write 
+\family typewriter
+value
+\family default
+ instead of 
+\family typewriter
+Constant(value)
+\family default
+ in contexts where terms are expected.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ supports functional composition through the term class 
+\family typewriter
+FunApp[T,R] (f:Term[T=>R], arg:T) extends Term[R]
+\family default
+.
+ This term is evaluated by evaluating the function term 
+\family typewriter
+f
+\family default
+, the argument term 
+\family typewriter
+arg
+\family default
+, and then applying the function value to the argument value.
+ Note that this class allows us to incorporate arbitrary native scala functions
+ into 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+: for a given function 
+\family typewriter
+fun:T=>R
+\family default
+ we can use the term 
+\family typewriter
+FunApp(Constant(fun),x) 
+\family default
+to represent the application of this function to the value that 
+\family typewriter
+x
+\family default
+ evaluates to.
+ 
+\family typewriter
+FunApp
+\family default
+ is hence very similar to 
+\family typewriter
+Apply1
+\family default
+ in Figaro.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+One diference is the fact that we allow the function to be a term as well.
+ 
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+Finally, we will often make use of an 
+\family typewriter
+IversonBracket (arg:Term[Boolean]) extends Term[Double]
+\family default
+ class.
+ This term evaluates the booelan 
+\family typewriter
+arg
+\family default
+ term, and evaluates to 1 if 
+\family typewriter
+arg
+\family default
+ evaluated to 
+\family typewriter
+true
+\family default
+, and to 0 otherwise.
+ This term is the cornerstone of Markov Logic---it provides the mapping
+ from boolean expressions to real values that sits in each ground feature.
+ Again, instead of fully writing out this term we accept 
+\family typewriter
+$(arg)
+\family default
+$.
+\end_layout
+
+\begin_layout Subsection
+Propositional Models
+\end_layout
+
+\begin_layout Standard
+With the above terms, and a set of native scala functions, we are already
+ able to build some simple propositional scoring functions and probability
+ distributiosn over possible worlds.
+ For example, assuming that 
+\family typewriter
+dep
+\family default
+ is a 
+\family typewriter
+Var[Token x Token -> Boolean]
+\family default
+, and 
+\family typewriter
+w_1
+\family default
+ is a 
+\family typewriter
+Var[Double]
+\family default
+., then the following is a propositional ground markov network:
+\end_layout
+
+\begin_layout LyX-Code
+$(word(1,
+\begin_inset Quotes erd
+\end_inset
+
+the
+\begin_inset Quotes erd
+\end_inset
+
+) & word(2,
+\begin_inset Quotes erd
+\end_inset
+
+man
+\begin_inset Quotes erd
+\end_inset
+
+) ==> dep(1,2))$ * w_1
+\end_layout
+
+\begin_layout LyX-Code
+$(friends(A,B) ==> (smokes(A) <==> smokes(B)))$ * w_2
+\end_layout
+
+\begin_layout Standard
+This term evaluates to the score 
+\family typewriter
+weight
+\family default
+ if the term in the argument of the bracket evaluates to 
+\family typewriter
+true
+\family default
+, and to 
+\family typewriter
+0
+\family default
+ otherwise.
+ Here 
+\family typewriter
+x * y
+\family default
+ is a shortform of 
+\family typewriter
+FunApp(Constant(plus), TupleTerm(x,y))
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Note that 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ naturally allows you to scoring functions that go beyond weight boolean
+ formulae:
+\end_layout
+
+\begin_layout LyX-Code
+$(dep(1,5))$ * abs(5-1) * weight
+\end_layout
+
+\begin_layout Standard
+We will later see how this allows us to implement powerful real-valued-features
+ and discrete/continious hybrid models.
+\end_layout
+
+\begin_layout Standard
+##introduce Fold
+\end_layout
+
+\begin_layout Subsection
+Quantification
+\end_layout
+
+\begin_layout Standard
+So far we can only talk about specific objects in our domain.
+ However, the core advantage of first order language such as Markov Logic
+ is that it allows us to express preferences across a whole population of
+ objects.
+ This is achieved through quantification.
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ quantification is a general class of terms that allows us to apply a binary
+ function (term) to a range of objects.
+ We use the term class 
+\end_layout
+
+\begin_layout LyX-Code
+
+\family typewriter
+Quant(f:(T,T)=>T, v:Var[R], t: Term[T]) extends Term
+\end_layout
+
+\begin_layout Standard
+Terms of this class are evaluated as follows.
+ First, we evaluate 
+\family typewriter
+f
+\family default
+ against the possible world, and then we iterate over the elements of the
+ domain of 
+\family typewriter
+v
+\family default
+, substitute each occurence of 
+\family typewriter
+v
+\family default
+ in t with the current element, then evaluate the modified term 
+\family typewriter
+t
+\family default
+.
+ The results of these evaluations are then incrementally summarized using
+ 
+\family typewriter
+f
+\family default
+ until we have a single value of type 
+\family typewriter
+T
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+A few well known specializations of 
+\family typewriter
+Quant
+\family default
+ are
+\end_layout
+
+\begin_layout LyX-Code
+Forall(v:Var[R],t:Term[Boolean]) 
+\end_layout
+
+\begin_layout LyX-Code
+  extends Quant(Constant(And),v,t)
+\end_layout
+
+\begin_layout LyX-Code
+Sum(v:Var[R],t:Term[Double]) 
+\end_layout
+
+\begin_layout LyX-Code
+  extends Quant(Constant(Plus),v,t)
+\end_layout
+
+\begin_layout LyX-Code
+Product(v:Var[R],t:Term[Double]) 
+\end_layout
+
+\begin_layout LyX-Code
+  extends Quant(Constant(Times),v,t)
+\end_layout
+
+\begin_layout Standard
+With quantification we can now build expressive relational models.
+ However, first note that we provide a few scala shortcuts, such as sum(Domain,D
+omain,..) that allow us to write quantifications more compactly and intuitively.
+ 
+\end_layout
+
+\begin_layout LyX-Code
+sum{(t1,w1,t2,w2) => 
+\end_layout
+
+\begin_layout LyX-Code
+   $(word(t1,w1) & word(t2,w2) ==> dep(t1,t2))$ * w_1(w1,w2)}
+\end_layout
+
+\begin_layout LyX-Code
+sum{(x,y)=>
+\end_layout
+
+\begin_layout LyX-Code
+   $(friends(x,y) ==> (smokes(x) <==> smokes(y)))$ * w_2}
+\end_layout
+
+\begin_layout Standard
+Note that the first formula is precisely equivalent to the loglinear semantics
+ of a MLN formula.
+ Also note that we use 
+\family typewriter
+sum
+\family default
+ instead of 
+\family typewriter
+forall
+\family default
+ in the above cases.
+ This in fact is the true meaning of a 
+\emph on
+outer
+\emph default
+ forall in Markov Logic: it sums over the Iverson Bracket applied to a all
+ groundings of the formula.
+ In this sense the above syntax is most faithful to the semantics of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ and Markov Logic.
+ Note that the corresponding probability distribution can also be formulated
+ in dfacto.
+ Assume that 
+\family typewriter
+score
+\family default
+ is one of the sums above, then 
+\end_layout
+
+\begin_layout LyX-Code
+norm(exp(score))
+\end_layout
+
+\begin_layout Standard
+refers to the loglinear distribution based on the linear 
+\family typewriter
+score
+\family default
+ score.
+ Explain score.
+\end_layout
+
+\begin_layout Section
+Compositional Inference
+\end_layout
+
+\begin_layout Standard
+The open architecture we propose here poses a risk: if we allow arbitrary
+ new terms to enter the language as people see fit, we will loose more and
+ more guarantees in terms of tractable inference.
+ Clearly, the more we restrict our set of terms, the more control and optimizati
+on potential we will have.
+ 
+\end_layout
+
+\begin_layout Standard
+When considering inference in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ there are two related observations we can make.
+ First, and this holds for Markov Logic as well, our scoring functions will
+ sometimes contain tractable substructure such as spanning tree constraints.
+ Second, and this is due to the openness of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+, users can create new terms for which cannot design efficient and generic
+ inference in advance.
+ 
+\end_layout
+
+\begin_layout Standard
+We believe that both observations call for 
+\emph on
+compositional inference
+\emph default
+
+\begin_inset space ~
+\end_inset
+
+(CI): inference algorithms should be able to treat terms as black boxes
+ and pass control or representation-for-inference to the term.
+ For example, in Belief Propagation the summation operation on factors should
+ be handled by term corresponding to the factor (allowing DP implementations
+ if possible).
+ In Linear Programming we need to represent factors through linear constraints
+ and a linear objective---in compositional inference we ask the term to
+ provide this representation.
+\end_layout
+
+\begin_layout Standard
+CI allows us to provide an open architecture and efficient inference.
+ In fact, with CI extensions in the language become more than just syntactic
+ sugar; they can make inference 
+\emph on
+more efficient
+\emph default
+.
+ For example, by summarizing the notion of spanning trees into a single
+ term, and providing tailor-made inference for this term within a CI scheme,
+ we allow for much faster BP or LP inference than a Markov Logic model that
+ requires several formulae to represent spanning trees (see results).
+ The only way to realize something similar would be to automatically detect
+ sets of formulae that define special structure, and then call special inference
+ routines for them within CI.
+ 
+\end_layout
+
+\begin_layout Standard
+In the following we present current instantiations of the CI paradigm as
+ implemented in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+##Note that CI also makes code cleaner, and object-oriented.
+ 
+\end_layout
+
+\begin_layout Subsection
+Belief Propagation
+\end_layout
+
+\begin_layout Standard
+Belief Propagation lends itsell well to compositional inference.
+ Both in the case of Sum-Product BP
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "smith08dependency"
+
+\end_inset
+
+ and Max-Product BP
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Duchi07usingcombinatorial"
+
+\end_inset
+
+ is has been shown how to rewrite the BP update equations so that calculating
+ outgoing factor messages amounts to performing marginal inference for the
+ given factor alone (plus some local factors on each variable).
+ Here we present the case of Sum-Product BP, but note that Max-Product BP
+ has a very similar formulation.
+ 
+\end_layout
+
+\begin_layout Standard
+In its canocial form, BP requires us to marginalize a variable for a factor
+ term multiplied with the incoming messages from all but the current variable
+ node.
+ However, this marginalization can be rewritten as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \begin{equation}
+\#\#\label{eq:BP-CI}\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ BP is therefore supported by a 
+\end_layout
+
+\begin_layout LyX-Code
+
+\family typewriter
+marginalize(incoming:Beliefs):Beliefs
+\end_layout
+
+\begin_layout Standard
+method for real valued terms 
+\family typewriter
+Term[Double]
+\family default
+.
+ This method performs the calculation in equation 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:BP-CI"
+
+\end_inset
+
+, and 
+\family typewriter
+incoming
+\family default
+ provides local beliefs for each variable contained in the term.
+ By default this method exhaustively goes through all variable states of
+ the variables in the term and sums up probabilities (or scores) for each
+ variable as defined by 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:BP-CI"
+
+\end_inset
+
+.
+ However, for simple terms (such as weighted CNF terms) or more complicated
+ ones (like a spanning tree constraint), we can provide tailor-made inference
+ and gain efficiencies.
+ 
+\end_layout
+
+\begin_layout Subsection
+Integer Linear Programming
+\end_layout
+
+\begin_layout Standard
+It is easy to generically map Markov Logic Networks to Integer Linear Programs
+ in order to solve the MAP problem
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "riedel08improving"
+
+\end_inset
+
+.
+ And while the corresponding transformation is only exact for (log)linear
+ models, it can also be approximated for models that would yield quadratic
+ programs.
+ However, we can again expect performance improvements if we use specialized
+ representations for certain terms.
+ For example: ##DepParsing max flow.
+ 
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ we support black box ILP inference through an additional method from objects
+ of class 
+\family typewriter
+Term[Double]
+\family default
+ with a method 
+\end_layout
+
+\begin_layout LyX-Code
+
+\family typewriter
+asILP(var2ilpVar:Var=>ILPVar):ILPVarAndILP
+\end_layout
+
+\begin_layout Standard
+This method takes as input a mapping 
+\family typewriter
+var2ilpVar
+\family default
+ from variables contained in the term to ilp.
+ The result this method has to return is a variable (or set of variables),
+ that together with a provided set of linear constraints, provides the value
+ of the term.
+ Here we distinguish between three types of variables:
+\end_layout
+
+\begin_layout Enumerate
+Binary Variable: represented by a single LP variable constrained to be between
+ 0 and 1
+\end_layout
+
+\begin_layout Enumerate
+Categorical Variable: represented by a set of 
+\begin_inset Formula $n$
+\end_inset
+
+ binary variables where 
+\begin_inset Formula $n$
+\end_inset
+
+ is size of the domain of the variable)
+\end_layout
+
+\begin_layout Enumerate
+Real Variable: represented by a single LP variable
+\end_layout
+
+\begin_layout Enumerate
+(Deterministic Variable: returns 0 or -infinity.
+ In this case constraints suffice)
+\end_layout
+
+\begin_layout Standard
+Note that if a variable doesn't fall into the three types directly, we consider
+ it a categorical variable (for large domains this obviously creates large
+ ILPs).
+\end_layout
+
+\begin_layout Subsection
+MCMC
+\end_layout
+
+\begin_layout Subsection
+Relaxed MAP and Marginal Inference
+\end_layout
+
+\begin_layout Standard
+The complexity of inference in Markov Logic mostly arises from having to
+ ground each formula (and creating one ground formula for each assignment
+ of the free variables in the formula).
+ Hence an increasing number of inferernce try to avoid this process as much
+ as possible.
+ One such method is Cutting Plane Inference (or Marginal Cutting Plane Inference
+).
+ Here the idea is to start with a small subset of ground formulae, solve
+ the relaxed problem, and then add all ground terms which do not contribute
+ their maximal score in the current solution.
+ 
+\end_layout
+
+\begin_layout Standard
+We can also put CPI in the framework of compositional inference.
+ If we are trying to maximize the following quantified sum
+\begin_inset Formula \[
+\sum\ldots\]
+
+\end_inset
+
+then need to find all assignments of the free variables for which the term
+ ## is not returning its maximal value.
+ Again, this is something the term itself should know best how to do.
+ Hence library designers can override a 
+\end_layout
+
+\begin_layout LyX-Code
+
+\family typewriter
+subOptimal(world: World):Assignments
+\end_layout
+
+\begin_layout Standard
+method that returns all assignments for the free variables of a term that
+ are evaluated to a suboptimal value.
+ The default implementation of this method simply iterates over all assignments
+ and tests them.
+ Implementations for weighted CNFs can be much more efficient; for these
+ terms finding assignments with suboptimal scores amounts to processing
+ of first order disjunctive queries, and this is very efficient.
+ 
+\end_layout
+
+\begin_layout Section
+Example Extensions
+\end_layout
+
+\begin_layout Standard
+To give a more concrete idea of extension terms and their inference implementati
+ons within compositional inference, we show a set of example extensions
+ in this section.
+\end_layout
+
+\begin_layout Subsection
+Spanning Trees
+\end_layout
+
+\begin_layout Standard
+As we have discussed previously, compositional inference allows us to provide
+ special treatment of spanning tree constraints.
+ Such constraints appear in several domains and applications, such as dependency
+ parsing, object recognition, hierachical clustering etc.
+ In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ we provide spanning tree constraints through the term class
+\end_layout
+
+\begin_layout LyX-Code
+class SpanningTree[T](graph:Term[(T,T)=>Boolean]) 
+\end_layout
+
+\begin_layout LyX-Code
+  extends Term[Double]
+\end_layout
+
+\begin_layout Standard
+As usual, the semantics of this term class are defined through its 
+\family typewriter
+eval(word: World)
+\family default
+ function.
+ It is a hard/deterministic term that returns 0 if relation that 
+\family typewriter
+graph
+\family default
+ evaluates to is a spanning tree over vertices of type 
+\family typewriter
+T
+\family default
+, and 
+\begin_inset Formula $-\infty$
+\end_inset
+
+ otherwise.
+ 
+\end_layout
+
+\begin_layout Standard
+Let us know consider how to use such a term in Belief Propagation.
+ Here we are describing a factor that has 
+\begin_inset Formula $n^{2}$
+\end_inset
+
+ neighbors, one for each possible vertex pair.
+ In message passing we need to sum over these variables, which is exponentially
+ hard per se.
+ However, we can turn this problem into a polynomial problem by applying
+ the matrix tree theorem
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "smith08dependency"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+##need to talk about ground variables.
+ 
+\end_layout
+
+\begin_layout Standard
+##need concept of hidden closed world: if a ground variable has no terms
+ touching it, it is assumed to be in its default state (=default element
+ in the domain).
+ Note that the marginalize method only takes only incoming beliefs which
+ are not deterministically set to the default entity in the domain.
+ 
+\end_layout
+
+\begin_layout Subsection
+Cardinality Constraints
+\end_layout
+
+\begin_layout Standard
+Often we not only want make statements of the existence of a single entity
+ with a given property, but about some number 
+\begin_inset Formula $n$
+\end_inset
+
+ of such entities.
+ For example, in ## we need to model the fact that there can't be more than
+ ## with property ##.
+ First order logic can represent such constraints; however, the formulation
+ is quite verbose:
+\end_layout
+
+\begin_layout LyX-Code
+forall x1,x2,x3 ...
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ we propose an own language construct for this.
+ This makes models more readable, but it also allows for better treatment
+ of cardinality constraints when possible.
+ For example, a cardinality constraint can be compactly represented as ILP
+ constraints (more compact than the logical formulation suggests).
+ Hence we implement 
+\family typewriter
+asILP
+\family default
+ for this term class accordingly.
+\end_layout
+
+\begin_layout Subsection
+Matching Constraints
+\end_layout
+
+\begin_layout Standard
+See Koller.
+\end_layout
+
+\begin_layout Section
+Related Work
+\end_layout
+
+\begin_layout Subsection
+Factorie
+\end_layout
+
+\begin_layout Standard
+Factorie
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "mccallum08factorie"
+
+\end_inset
+
+ is a probabilistic programming language that follows the second, partially
+ imperative or procedural approach.
+ Here users can override generic MCMC jump functions with their own, tailor-made
+ proposals to gain significant efficiences and scale up to much larger data
+ and problems.
+ For example, in dependency parsing the computational complexity arises
+ from the constraint that the dependency graph needs to be a spanning graph---in
+ factorie this problem can be overcome by simply injecting a MCMC jump function
+ that proposes tree-preserving changes to the graph.
+\end_layout
+
+\begin_layout Standard
+The imperative nature of Factorie allows for great flexibility and often
+ leads to significant speed ups.
+ However, we see two problems with the approach followed in factorie.
+ First, model structure in factorie is often not explictely encoded.
+ Instead, it is implicitely represented in the jump function, and, in the
+ form of variable coordination, in the data manipulation methods of the
+ data structure the user has provided.
+ This means that someone can only understand a model after she has inspected
+ the imperative code in the jump function and as well as all data manipulation
+ methods.
+ Moreover, if these implicit model definitions are present in the imperative
+ code, it is impossible to simply exhange MCMC inference with, say, a variationa
+l method.
+ Instead the user would have to either adapt his variational method in order
+ to somehow account for variable coordination and constraint preserving
+ jumps.
+ Or he would need to explicitely (and declaratively) encode variable coordinatio
+n and the knowledge encoded in jump function (including potential bias in
+ this function) as factor templates.
+ [mention that backwards probability is hard to compute, and so we often
+ avoid calculating the actual number] Mention bias more strongly.
+\end_layout
+
+\begin_layout Standard
+[Second, it is likely that the user, when designing his jump function, not
+ only has to take into consideration the hard constraints he wants to encode,
+ but also the remaining structure of his model.
+ In this case his proposal function becomes specific to his personal model,
+ and cannot simply be re-used in another spanning-tree related task.
+ ]
+\end_layout
+
+\begin_layout Standard
+Third, in Factorie the imperative paradigm is also applied to model specificatio
+n and data representation---this often leads to more boilerplate code and
+ less concise representations of models.
+ Moreover, to design (or understand) a factorie model, users cannot just
+ be domain experts, they need to be programmers.
+\end_layout
+
+\begin_layout Standard
+From the view of the language designer or extender, working within Open
+ Markov Logic is partly imperative.
+ He can introduce new building blocks for user to add to their models, and
+ (imperatively) implement efficient inference methods for these if needed.
+ However, every building block he provides must have well-defined probabilistic
+ semantics that allows us to choose a different mode of inference if needed.
+ In other words, the meaning of such a building block is independent of
+ the imperative code that performs efficient inference with it.
+ 
+\end_layout
+
+\begin_layout Standard
+Technically Open Markov Logic
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\begin_layout Subsection
+Markov Logic
+\end_layout
+
+\begin_layout Standard
+Our proposed approach to probabilistic programming is based on, or rather,
+ inspired by Markov Logic---a combination of first order logic and Markov
+ Netoworks.
+ It can be seen as a formalism that extends First Order Logic to allow formulae
+ that can be violated with some penalty.
+ From an alternative point of view, it is an expressive template language
+ that uses First Order Logic formulae to instantiate Markov Networks of
+ repetitive structure.
+ 
+\end_layout
+
+\begin_layout Standard
+[needs fixing] Let us introduce Markov Logic by considering dependency parsing.
+ In Markov Logic we can model this task by first introducing a set of logical
+ predicates such as 
+\emph on
+word(Token,Word),
+\emph default
+ 
+\emph on
+pos(Token,Pos)
+\emph default
+ and 
+\emph on
+dependency(Token,Token)
+\emph default
+.
+ Then we specify a set of weighted first order formulae that define a distributi
+on over sets of ground atoms of these predicates (or so-called 
+\emph on
+possible worlds
+\emph default
+).
+\end_layout
+
+\begin_layout Standard
+In Markov Logic a set 
+\begin_inset Formula $M=\left\{ \left(\phi,w_{\phi}\right)\right\} _{\phi}$
+\end_inset
+
+ of weighted first order formulae is called a 
+\emph on
+Markov Logic Network
+\emph default
+
+\begin_inset space ~
+\end_inset
+
+(MLN).
+ It assigns the probability
+\begin_inset Formula \begin{equation}
+\prob\left(\y\right)=\frac{1}{Z}\exp\left(\sum_{\left(\phi,w\right)\in M}\sum_{\boldc\in C^{\phi}}\left[\phi\left(\boldc\right)\right]\cdot w\right)\label{eq:prob}\end{equation}
+
+\end_inset
+
+to the possible world 
+\begin_inset Formula $\y$
+\end_inset
+
+.
+ Here 
+\begin_inset Formula $C^{\phi}$
+\end_inset
+
+ is the set of all possible bindings of the free variables in 
+\begin_inset Formula $\phi$
+\end_inset
+
+ with the constants of our domain.
+ 
+\begin_inset Formula $\phi\left(\boldc\right)$
+\end_inset
+
+ is the 
+\emph on
+ground formula
+\emph default
+ we get by replacing the free variables in 
+\begin_inset Formula $\phi$
+\end_inset
+
+ by the constants in 
+\begin_inset Formula $\boldc$
+\end_inset
+
+.
+ 
+\begin_inset Formula $\left[\cdot\right]$
+\end_inset
+
+ is the Iverson Bracket that returns 1 if the boolean argument inside the
+ bracket evaluates to true, and 0 otherwise.
+ 
+\begin_inset Formula $Z$
+\end_inset
+
+ is a normalisation constant.
+ Note that this distribution corresponds to a Markov Network (the so-called
+ 
+\emph on
+Ground Markov Network
+\emph default
+) where nodes represent ground atoms and factors represent ground formulae.
+\end_layout
+
+\begin_layout Standard
+By looking at equation 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:prob"
+
+\end_inset
+
+ one can understand Markov Logic as a language that allows us to compose
+ probability or scoring functions over possible worlds using a small set
+ of building blocks that can be arranged to yield terms conforming to equation
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:prob"
+
+\end_inset
+
+ :
+\end_layout
+
+\begin_layout Itemize
+Normalization and Exp.
+ over a linear product
+\end_layout
+
+\begin_layout Itemize
+Sum over formula-weight pairs
+\end_layout
+
+\begin_layout Itemize
+sum over assignments of free variables (quantification)
+\end_layout
+
+\begin_layout Itemize
+Iverson bracket (mapping booleans to real values)
+\end_layout
+
+\begin_layout Itemize
+multiplication with weight
+\end_layout
+
+\begin_layout Itemize
+basic logic connectives and predicates, forall, exists (within Iverson Bracket).
+\end_layout
+
+\begin_layout Standard
+In other words, a MLN is a term that has the form of equation 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:prob"
+
+\end_inset
+
+.
+ [Stress view of MLN as composed scoring function term] That is, we can
+ see as our unit of modelling not only as a list of weighted FOL formula,
+ but also as a composed scoring function term that follows a set of construction
+ rules and has a small set of atomic building blocks.
+ Note that in this view the semantics of an MLN are immediately clear---they
+ correspond to the 
+\begin_inset Quotes eld
+\end_inset
+
+natural
+\begin_inset Quotes erd
+\end_inset
+
+ semantics of the mathematical term in equation 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:prob"
+
+\end_inset
+
+.
+ While can go ahead and define the semantics of this term even further,
+ it should be clear from here.
+ Also note that in this view a model developer could essentially directly
+ translate his mathematical formulae in his paper into running code.
+ 
+\end_layout
+
+\begin_layout Section
+Experiments
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+mymodel = lambda tokenProperties, tag.
+ forall p,t,v.
+ token(t) & tokenProperty(p) & p(t,+v) =>tag(t,tag) {
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+  marginalize(...)
+\end_layout
+
+\begin_layout LyX-Code
+
+\size footnotesize
+}
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "/Users/riedelcastro/projects/phd/phdthesis"
+options "plain"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Higher Order Markov Logic
+\end_layout
+
+\begin_layout Standard
+It should be clear from the section 1 that we want to talk about properties
+ not only of simple entities such as tokens or tags, but also about properties
+ of graphs (dependency should be a tree) or sets of relations (all token
+ properties).
+ This clearly suggests a higher order approach
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "farmer08seven"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+We want to talk about need terms to 
+\end_layout
+
+\begin_layout Standard
+Core:
+\end_layout
+
+\begin_layout Itemize
+Constant, Fun Application, Quantification
+\end_layout
+
+\begin_layout Standard
+Extended:
+\end_layout
+
+\begin_layout Itemize
+Indicator, Multiplication, Iverson Bracket (delta/real to boolean), Exp
+\end_layout
+
+\begin_layout Subsubsection
+Some Theory
+\end_layout
+
+\begin_layout Itemize
+Treat every formula as a term 
+\end_layout
+
+\begin_layout Itemize
+Functional Type Theory (Church, inspired by Frege) used here
+\end_layout
+
+\begin_layout Itemize
+MLNs etc: Relational Type Theory
+\end_layout
+
+\begin_layout Itemize
+Compared to Blog, Church etc: here terms are deterministic, there terms
+ are random variables
+\end_layout
+
+\begin_layout Itemize
+The strength of the lambda-calculus is that it is easily used as a "glue"
+ on top of a richer world of primitives.
+ Its advantages as a glue are that it has a natural correspondence with
+ the way that people program, and natural compilation techniques yield high-perf
+ormance code.
+ The latter comes through optimizations know as tail-call and continuation-passi
+ng, which might be the subject of future talks.
+\end_layout
+
+\begin_layout Itemize
+The Environment Model of Evaluation (functional)
+\end_layout
+
+\begin_layout Itemize
+Title: Functional Programming of Scores over Possible Worlds
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+vs Function Programming of Random Variables
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Formulas are terms.
+ Some (http://mally.stanford.edu/Papers/rtt.pdf) argue: In this paper we develop
+ an argument that suggests Whitehead & Russell’s approach to the foundations
+ of logic, which takes relations as basic, is to be preferred to Frege’s
+ and Church’s.(difference between RTTs and FTTs with regard to their ability
+ to represent systems containing formulas that aren’t, and can’t be converted
+ to, terms.)
+\end_layout
+
+\begin_layout Itemize
+http://en.wikipedia.org/wiki/Principle_of_compositionality
+\end_layout
+
+\begin_layout Itemize
+http://en.wikipedia.org/wiki/Value-level_programming
+\end_layout
+
+\begin_layout Itemize
+http://plato.stanford.edu/entries/type-theory-church/
+\end_layout
+
+\begin_layout Itemize
+Henkin's (1950) standard model for semantics
+\end_layout
+
+\begin_layout Itemize
+look at model theory for church type theory and use a bit of their terminology
+\end_layout
+
+\begin_layout Itemize
+http://imps.mcmaster.ca/doc/seven-virtues.ps
+\end_layout
+
+\begin_layout Itemize
+Simple Type Theory! valuation function, we are STT with
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+many sortedness
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Quantification=Definite Description
+\end_layout
+
+\begin_layout Itemize
+ExML: mixture of Markov Logic, Simple Type Theory (with Many Base types),
+ Church/Figaro, Factorie
+\end_layout
+
+\begin_layout Itemize
+The two semantics of ﬁrst-order logic and stt are based on essentially the
+ same ideas: domains of individuals, truth values, and functions; models
+ for languages; variable assignments; and valuation functions deﬁned recursively
+ on the syntax of expressions.
+\end_layout
+
+\begin_layout Paragraph
+Alchemy Style Markov Logic
+\end_layout
+
+\begin_layout LyX-Code
+$(a(x) & b(x)) * 2.0
+\end_layout
+
+\begin_layout LyX-Code
+$(a(x)) * 1.0 + $(b(x)) * 1.0
+\end_layout
+
+\begin_layout LyX-Code
+$$(a(x) & b(x)) * 2.0
+\end_layout
+
+\begin_layout LyX-Code
+$$(a(x) & b(x)) * 1_(x)
+\end_layout
+
+\begin_layout LyX-Code
+AlchemyTerm(BooleanTerm) extends Sum(...)
+\end_layout
+
+\begin_layout LyX-Code
+Individisble(BooleanTerm) extends BooleanTerm
+\end_layout
+
+\begin_layout Standard
+We have gin
+\end_layout
+
+\begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Standard
+We presented 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+, a novel framework/language for declarative probabilistic programming.
+ In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ use the notions of composition and quantification to declare scoring/probabilit
+y functions over possible worlds, just as in Markov Logic.
+ However, instead of only allowing weighted first order logic formulae,
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ provides a much richer set of building blocks to use.
+ In fact, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+'s set of possible terms to use is 
+\emph on
+open-ended
+\emph default
+: library designers can extend the language with new terms as they see fit.
+ 
+\end_layout
+
+\begin_layout Standard
+We showed new terms in the language not merely provide syntactic sugar.
+ In fact, we argue that their primary advantage is added efficiency if we
+ are working with inference algorithms that decompose into subroutines according
+ to subterms.
+ In 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lang{}
+\end_layout
+
+\end_inset
+
+ new terms provide their own inference sub-routines.
+ Hence users can replace some generic representation (and corresponding
+ generic inference) with specific representation and tailor-made inference.
+ We empirically show how this paradigm can be exploited in the context of
+ dependency parsing and ##.
+\end_layout
+
+\end_body
+\end_document

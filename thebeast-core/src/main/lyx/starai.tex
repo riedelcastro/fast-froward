@@ -1,0 +1,228 @@
+%% LyX 1.6.5 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+\newcommand{\noun}[1]{\textsc{#1}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
+\newenvironment{lyxcode}
+{\par\begin{list}{}{
+\setlength{\rightmargin}{\leftmargin}
+\setlength{\listparindent}{0pt}% needed for AMS classes
+\raggedright
+\setlength{\itemsep}{0pt}
+\setlength{\parsep}{0pt}
+\normalfont\ttfamily}%
+ \item[]}
+{\end{list}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage{aaai}
+\newcommand{\lang}{\textsc{DFacto}}
+\newcommand{\definition}{Declarative Factor Graphs, Open.}
+
+\makeatother
+
+\usepackage{babel}
+
+\begin{document}
+
+\title{Declarative Probabilistic Programming for Undirected Graphical Models:
+Open Up to Scale Up}
+\maketitle
+\begin{abstract}
+We argue that probabilistic programming with undirected models, in
+order to scale up, needs to \emph{open up}. That is, instead of focussing
+on minimal sets of generic building blocks such as universal quantification
+or logical connectives, languages should \emph{grow} to include specific
+building blocks for as many uses cases as necessary. We argue that
+this can not only lead to more consise models, but also to\emph{ more
+efficient} inference if we use methods that can exploit building-block
+specific sub-routines. As embodyment of this paradigm we present \lang{},
+a framework for undirected graphical models that allows languages
+to grow.
+\end{abstract}
+
+\section{Introduction}
+
+Probabilistic Programming languages for undirected models, such as
+Markov Logic~\cite{richardson06markov} and Relational Markov Networks~\cite{taskar02discriminative},
+are very expressive. Many statistical models of interest can be readily
+described in terms of these languages. However, often the generic
+inference routines will either be too slow, too inaccurate, or both.
+For example, it is possible to use Markov Logic for encoding probability
+distributions over the set of possible syntactic dependency trees
+of a sentence. Yet, generic inference in these models is very inefficient,
+in particular due to deterministic factors which ensure that the set
+of predicted edges is a spanning tree over the words of the sentence. 
+
+Here we argue that probabilistic programming, in order to scale up,
+needs to \emph{open up}. That is, instead of focusing on minimal sets
+of generic building blocks such as universal quantification and logical
+connectives, languages should \emph{grow} to eventually include specific
+building blocks for as many uses cases as necessary. For example,
+we should provide a spanning tree constraint as part of our language
+that can be used whenever we want to extract dependency trees, of
+model hierarchical structures in general.%
+\footnote{Spanning trees also appear in image segmentation, and general clustering
+of objects.%
+} 
+
+On first sight, this is not more than syntactic sugar. However, we
+argue that it can also lead to\emph{ more efficient} inference if
+we use inference methods that can exploit building-block specific
+sub-routines. For example, Belief Propagation requires summation over
+the variables of each factor. For a spanning tree constraint this
+can be done very efficiently.
+
+Clearly, we do not want to design a language with all constructs we
+could ever need in advance. Instead, we need to provide the glue for
+an ever-increasing set of language \emph{extensions}. In the following
+we will present \lang{}, an attempt to provide this glue. 
+
+Like Markov Logic\inputencoding{latin1}{, }\inputencoding{latin9}\lang{}
+is declarative and focuses on undirected models. However, it is not
+limited to logical connectives and quantification; rather, it serves
+as a framework for extensions such as cardinality constraints, or
+the tree constraint discussed above. \lang{} supports user-provided
+inference routines akin to the (primarily) imperative language \noun{Factorie}~\cite{mccallum09factorie},
+but does so in a declarative setting. \lang{} is also similar to
+recent approaches such as \noun{Church}~\cite{goodman08church} and
+\noun{Figaro}~\cite{pfeffer09figaro}, which support tailor-made
+proposal functions. However, these languages focus on generative models
+and MCMC. 
+
+
+\section{Domains, Variables, Worlds}
+
+The glue that \lang{} provides are object-oriented interfaces for
+building blocks. Most inference and learning methods (not a focus
+here) can be work purely in terms of these interfaces. We will describe
+them using classes and traits of Scala, a hybrid functional object-oriented
+programming language. 
+
+A \texttt{Domain{[}T{]}} contains the (Scala) objects of type \texttt{T}
+we want to talk about; it needs to provide an iterator over its objects,
+as well as a \texttt{contains} method to indicate Domain membership.
+Three built-in types of domains are \texttt{Values, Tuples,} and \texttt{Functions}.
+The first simply represents a user-defined set of objects; the second
+tuples values, and the third all functions from a domain to a target. 
+
+For example, in
+\begin{lyxcode}
+val~Tokens~=~Values(0,1,2,3,4,5)
+
+val~Graph~=~(Tokens~x~Tokens)~->~Bools~
+\end{lyxcode}
+the first domain \texttt{Tokens} contains all integers from 0 to 5
+(and represent word indices in a sentence), and the second domain
+all functions that map token pairs to booleans (and represent directed
+graphs over the tokens). 
+
+In \lang{} a variable is represented by objects of the class \texttt{Var{[}T{]}}.
+Each variable has a name and a domain that specifies which values
+the variable can possibly take on. For example, in the following
+snippet \texttt{edge} is a graph over tokens:
+\begin{lyxcode}
+val~edge~=~Var({}``edge'',~Graph)
+\end{lyxcode}
+Finally, a variable binding is a (possible) \texttt{World}.%
+\footnote{This amounts to possible worlds in Markov Logic for bindings of function
+variables that map into booleans. %
+} Its core method is \texttt{resolveVar(v)} and returns the object
+the variable \texttt{v} is assigned to. 
+
+
+\section{Terms}
+
+A term is a symbolic expression that is, given a possible world, evaluated
+to an object. In \lang{} a term is an instance of a \texttt{Term{[}T{]}}
+trait that has to implement an \texttt{evaluate(world)} method which
+maps the binding \texttt{world} to a value of type \texttt{T}. Terms
+in \lang{} can serve as boolean formulae (when they evaluate into
+booleans). Crucially, when they evaluate into real values they also
+serve as probabilistic models.
+
+A simple example term is:
+\begin{lyxcode}
+Indicator(FunApp(edge,Tuple(0,5))
+\end{lyxcode}
+\texttt{Indicator} evaluates to 1 if the boolean term inside evaluates
+to \texttt{TRUE}, and 0 otherwise. The \texttt{FunApp} term applies
+the result of evaluating the first argument to the result of evaluating
+the second. \texttt{edge} refers to the \texttt{Var} object we defined
+earlier and evaluates to the function the variable is bound to. The
+other terms are defined accordingly. Scala's syntactic sugar, and
+\texttt{\$\{$\cdot$\}} as the indicator function, can be used to
+alternatively write
+\begin{lyxcode}
+\$\{edge(0,5)\}
+\end{lyxcode}
+To support abstraction, we provide quantified operations that are
+applied to all objects of a given domain. For example, to evaluate 
+\begin{lyxcode}
+Sum(Tokens,i=>\$\{tag(i,VB)->edge(0,i)\})
+\end{lyxcode}
+we replace \emph{i} in the inner term with each possible value in
+\texttt{Tokens}, then we evaluate the inner term, get a real value
+$x_{i}$, and sum over all values $x_{i}$. Note that the term amounts
+to the logarithm of a simple MLN (without normalization) that encourages
+worlds where verbs (tokens with tag/part-of-speech VB) are children
+of 0 (by convention the root of the tree). Generic MLNs can be formulated
+accordingly.
+
+For most users, working with \lang{} means assembling terms of existing
+types into probabilistic models. Some users, however, will provide
+new types of terms. For example, we can add a spanning tree constraint
+\texttt{Tree(edge)} for which \texttt{eval} returns 1 if the function
+in \texttt{edge} corresponds to a spanning tree over objects in \texttt{Tokens},
+and 0 otherwise.
+
+
+\section{Inference}
+
+Real valued terms also implement a \texttt{factorize} method that
+returns a set of terms it factors into. This method, together with
+\texttt{eval}, is sufficient to implement most (propositional) factor
+graph inference methods such as Belief Propagation and its variants. 
+
+However, working purely in terms of \texttt{eval} will often be very
+inefficient. For example, calculating outgoing BP messages for \texttt{Tree(edge)}
+is intractable because \texttt{eval} needs to be called for every
+possible assignment to \texttt{edge}. We therefore introduce a \texttt{message}
+method that terms implement if outgoing messages can be calculated
+more efficiently. For our tree constraint factor this is possible
+in cubic time~\cite{smith08dependency}.
+
+Note that similar approaches can be used for algorithms such as Max
+Product BP~\cite{Duchi07usingcombinatorial} or methods that do not
+unroll the full graph. For example, quantified terms can have a \texttt{separate}
+method for Cutting Plane Inference~\cite{riedel08improving} that
+returns all factors not \emph{maximally satisfied} in a given world. 
+
+
+\section{Conclusion}
+
+We have presented \lang{}, an object-oriented framework for declarative
+probabilistic programming with undirected models. It supports user-provided
+extensions and is centered around a small set of interface definition
+that allow extensions to provide their semantics (through the \texttt{eval}
+method) and suitable inference routines (e.g., through the \texttt{message}
+method). We believe that this approach will make probabilistic programming
+with undirected models more applicable to real-world problems (such
+as dependency parsing) because we can leverage existing specialized
+as well as generic means of inference. 
+
+{\footnotesize \bibliographystyle{aaai}
+\bibliography{/Users/riedelcastro/projects/papers.fresh/bibtex/riedel}
+}{\footnotesize \par}
+
+
+
+
+\end{document}
