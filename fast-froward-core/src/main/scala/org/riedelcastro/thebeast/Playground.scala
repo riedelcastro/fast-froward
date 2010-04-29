@@ -30,6 +30,8 @@ object Playground extends Application with TheBeastEnv {
   println(env(^(IntAdd)(x)(1)))
   println(env(^(1) + x))
 
+  println("Test")
+
   println(Fold(IntAdd, Seq[Term[Int]](1, 2, x + 3, 4), 0))
 
   println((k(1)(2) + x).variables)
