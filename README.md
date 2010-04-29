@@ -13,3 +13,7 @@ Installation
 First test the code
 
 `mvn test`
+
+If this works install fast-froward to your maven repo:
+
+`mvn install`
