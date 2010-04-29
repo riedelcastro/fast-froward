@@ -10,7 +10,7 @@ Technically Fast-Forward is relying on the idea of dual relaxation and decomposi
 Installation
 ============
 
-First test the code
+To compile and install fast-froward you first need to install maven (http://maven.apache.org/). Then compile and test the code
 
 `mvn test`
 
