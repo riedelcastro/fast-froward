@@ -3,6 +3,12 @@
 \documentclass[english]{article}
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
+\usepackage{babel}
+
+\usepackage[unicode=true, pdfusetitle,
+ bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
+ breaklinks=false,pdfborder={0 0 1},backref=false,colorlinks=false]
+ {hyperref}
 
 \makeatletter
 
@@ -23,43 +29,48 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 \usepackage{aaai}
-\newcommand{\lang}{\textsc{DFacto}}
+\newcommand{\lang}{\textsc{Fast Froward}}
 \newcommand{\definition}{Declarative Factor Graphs, Open.}
 
 \makeatother
-
-\usepackage{babel}
 
 \begin{document}
 
 \title{Declarative Probabilistic Programming for Undirected Graphical Models:
 Open Up to Scale Up}
+
+
+\author{Sebastian Riedel\\
+Department of Computer Science, University of Massachusetts Amherst,
+Amherst, MA 01002\\
+\texttt{\normalsize riedel@cs.umass.edu}}
 \maketitle
 \begin{abstract}
 We argue that probabilistic programming with undirected models, in
-order to scale up, needs to \emph{open up}. That is, instead of focussing
+order to scale up, needs to \emph{open up}. That is, instead of focusing
 on minimal sets of generic building blocks such as universal quantification
 or logical connectives, languages should \emph{grow} to include specific
-building blocks for as many uses cases as necessary. We argue that
-this can not only lead to more consise models, but also to\emph{ more
-efficient} inference if we use methods that can exploit building-block
-specific sub-routines. As embodyment of this paradigm we present \lang{},
-a framework for undirected graphical models that allows languages
-to grow.
+building blocks for as many uses cases as necessary. This can not
+only lead to more concise models, but also to\emph{ more efficient}
+inference if we use methods that can exploit building-block specific
+sub-routines. As embodiment of this paradigm we present \lang{},
+a platform for implementing probabilistic programming languages that
+grow. 
 \end{abstract}
 
 \section{Introduction}
 
 Probabilistic Programming languages for undirected models, such as
-Markov Logic~\cite{richardson06markov} and Relational Markov Networks~\cite{taskar02discriminative},
-are very expressive. Many statistical models of interest can be readily
-described in terms of these languages. However, often the generic
-inference routines will either be too slow, too inaccurate, or both.
-For example, it is possible to use Markov Logic for encoding probability
-distributions over the set of possible syntactic dependency trees
-of a sentence. Yet, generic inference in these models is very inefficient,
-in particular due to deterministic factors which ensure that the set
-of predicted edges is a spanning tree over the words of the sentence. 
+Markov Logic and Relational Markov Networks, are very expressive.
+Many statistical models of interest can be readily described in terms
+of these languages. However, often the generic inference routines
+will either be too slow, too inaccurate, or both. For example, it
+is possible to use Markov Logic~\cite{richardson06markov} for encoding
+probability distributions over the set of possible syntactic dependency
+trees of a sentence. Yet, generic inference in these models is very
+inefficient, in particular due to deterministic factors which ensure
+that the set of predicted edges forms a spanning tree over the words
+of the sentence. 
 
 Here we argue that probabilistic programming, in order to scale up,
 needs to \emph{open up}. That is, instead of focusing on minimal sets
@@ -67,31 +78,26 @@ of generic building blocks such as universal quantification and logical
 connectives, languages should \emph{grow} to eventually include specific
 building blocks for as many uses cases as necessary. For example,
 we should provide a spanning tree constraint as part of our language
-that can be used whenever we want to extract dependency trees, of
-model hierarchical structures in general.%
-\footnote{Spanning trees also appear in image segmentation, and general clustering
-of objects.%
-} 
+that can be used whenever we want to extract dependency trees, or
+model hierarchical structures in general. 
 
 On first sight, this is not more than syntactic sugar. However, we
 argue that it can also lead to\emph{ more efficient} inference if
 we use inference methods that can exploit building-block specific
 sub-routines. For example, Belief Propagation requires summation over
 the variables of each factor. For a spanning tree constraint this
-can be done very efficiently.
+can be done very efficiently. 
 
 Clearly, we do not want to design a language with all constructs we
 could ever need in advance. Instead, we need to provide the glue for
-an ever-increasing set of language \emph{extensions}. In the following
-we will present \lang{}, an attempt to provide this glue. 
+an ever-increasing set of language extensions. In the following we
+will present \lang{},%
+\footnote{\texttt{\href{http://riedelcastro.github.com/fast-froward/}{http://riedelcastro.github.com/fast-froward/}.}%
+} a software library that attempts to provide this glue.
 
-Like Markov Logic\inputencoding{latin1}{, }\inputencoding{latin9}\lang{}
-is declarative and focuses on undirected models. However, it is not
-limited to logical connectives and quantification; rather, it serves
-as a framework for extensions such as cardinality constraints, or
-the tree constraint discussed above. \lang{} supports user-provided
-inference routines akin to the (primarily) imperative language \noun{Factorie}~\cite{mccallum09factorie},
-but does so in a declarative setting. \lang{} is also similar to
+\lang{} supports user-provided inference routines akin to the (primarily)
+imperative language \noun{Factorie}~\cite{mccallum09factorie}, but
+does so in a declarative setting. It is also similar in spirit to
 recent approaches such as \noun{Church}~\cite{goodman08church} and
 \noun{Figaro}~\cite{pfeffer09figaro}, which support tailor-made
 proposal functions. However, these languages focus on generative models
@@ -101,18 +107,15 @@ and MCMC.
 \section{Domains, Variables, Worlds}
 
 The glue that \lang{} provides are object-oriented interfaces for
-building blocks. Most inference and learning methods (not a focus
-here) can be work purely in terms of these interfaces. We will describe
-them using classes and traits of Scala, a hybrid functional object-oriented
-programming language. 
+building blocks, and high level inference routines that function in
+terms of these interfaces. We present the former in Scala, a hybrid
+functional object-oriented programming language. 
 
 A \texttt{Domain{[}T{]}} contains the (Scala) objects of type \texttt{T}
 we want to talk about; it needs to provide an iterator over its objects,
 as well as a \texttt{contains} method to indicate Domain membership.
-Three built-in types of domains are \texttt{Values, Tuples,} and \texttt{Functions}.
-The first simply represents a user-defined set of objects; the second
-tuples values, and the third all functions from a domain to a target. 
-
+Three built-in types of domains are \texttt{Values}, representing
+a user-defined set of objects\texttt{, Tuples,} and \texttt{Functions}.
 For example, in
 \begin{lyxcode}
 val~Tokens~=~Values(0,1,2,3,4,5)
@@ -124,18 +127,15 @@ the first domain \texttt{Tokens} contains all integers from 0 to 5
 all functions that map token pairs to booleans (and represent directed
 graphs over the tokens). 
 
-In \lang{} a variable is represented by objects of the class \texttt{Var{[}T{]}}.
-Each variable has a name and a domain that specifies which values
-the variable can possibly take on. For example, in the following
-snippet \texttt{edge} is a graph over tokens:
-\begin{lyxcode}
-val~edge~=~Var({}``edge'',~Graph)
-\end{lyxcode}
-Finally, a variable binding is a (possible) \texttt{World}.%
+In \lang{} a variable is represented by objects of the class \texttt{Var{[}T{]}}
+that come with a name and a domain that specifies which values the
+variable can possibly take on. For example, to declare the variable
+\texttt{edge} as a graph over tokens we write \texttt{val edge = Var({}``edge'',
+Graph)}. A binding of such variables is a (possible) \texttt{World}.%
 \footnote{This amounts to possible worlds in Markov Logic for bindings of function
 variables that map into booleans. %
-} Its core method is \texttt{resolveVar(v)} and returns the object
-the variable \texttt{v} is assigned to. 
+} Its core method \texttt{resolveVar(v)} returns the object the variable
+\texttt{v} is assigned to. 
 
 
 \section{Terms}
@@ -159,10 +159,8 @@ the second. \texttt{edge} refers to the \texttt{Var} object we defined
 earlier and evaluates to the function the variable is bound to. The
 other terms are defined accordingly. Scala's syntactic sugar, and
 \texttt{\$\{$\cdot$\}} as the indicator function, can be used to
-alternatively write
-\begin{lyxcode}
-\$\{edge(0,5)\}
-\end{lyxcode}
+alternatively write \texttt{\$\{edge(0,5)\}}.
+
 To support abstraction, we provide quantified operations that are
 applied to all objects of a given domain. For example, to evaluate 
 \begin{lyxcode}
@@ -171,17 +169,16 @@ Sum(Tokens,i=>\$\{tag(i,VB)->edge(0,i)\})
 we replace \emph{i} in the inner term with each possible value in
 \texttt{Tokens}, then we evaluate the inner term, get a real value
 $x_{i}$, and sum over all values $x_{i}$. Note that the term amounts
-to the logarithm of a simple MLN (without normalization) that encourages
-worlds where verbs (tokens with tag/part-of-speech VB) are children
-of 0 (by convention the root of the tree). Generic MLNs can be formulated
-accordingly.
+to the logarithm of a unnormalized MLN that encourages worlds where
+verbs are children of the root (by convention token 0). Generic MLNs
+can be formulated accordingly.
 
-For most users, working with \lang{} means assembling terms of existing
-types into probabilistic models. Some users, however, will provide
-new types of terms. For example, we can add a spanning tree constraint
-\texttt{Tree(edge)} for which \texttt{eval} returns 1 if the function
-in \texttt{edge} corresponds to a spanning tree over objects in \texttt{Tokens},
-and 0 otherwise.
+Crucially, we can also add terms that are not in Markov Logic. For
+example: the spanning tree constraint \texttt{Tree(edge)} for which
+\texttt{eval} returns 1 if the function in \texttt{edge} corresponds
+to a spanning tree over objects in \texttt{Tokens}, and 0 otherwise.
+
+
 
 
 \section{Inference}
@@ -189,40 +186,52 @@ and 0 otherwise.
 Real valued terms also implement a \texttt{factorize} method that
 returns a set of terms it factors into. This method, together with
 \texttt{eval}, is sufficient to implement most (propositional) factor
-graph inference methods such as Belief Propagation and its variants. 
+graph inference methods such as Sum Product Belief Propagation and
+its variants. 
 
 However, working purely in terms of \texttt{eval} will often be very
 inefficient. For example, calculating outgoing BP messages for \texttt{Tree(edge)}
-is intractable because \texttt{eval} needs to be called for every
-possible assignment to \texttt{edge}. We therefore introduce a \texttt{message}
-method that terms implement if outgoing messages can be calculated
-more efficiently. For our tree constraint factor this is possible
-in cubic time~\cite{smith08dependency}.
+in this way is intractable because \texttt{eval} needs to be called
+for each of the exponential assignments to \texttt{edge}. We therefore
+introduce a \texttt{bpMessage} method that terms implement if outgoing
+messages can be calculated more efficiently. For our tree constraint
+factor this is possible in cubic time~\cite{smith08dependency}.
 
-Note that similar approaches can be used for algorithms such as Max
-Product BP~\cite{Duchi07usingcombinatorial} or methods that do not
-unroll the full graph. For example, quantified terms can have a \texttt{separate}
-method for Cutting Plane Inference~\cite{riedel08improving} that
-returns all factors not \emph{maximally satisfied} in a given world. 
+There is a more general paradigm behind inference in \lang{}: the
+probabilistic programmer composes a probabilistic model, and the interpreter
+composes a global optimizer for this model using the local optimizers
+that come with its building blocks. This technique is appropriate
+not only for Sum-Product BP, but also for other methods that break
+up the global variational objective into several local problems via
+dual decomposition~\cite{Duchi07usingcombinatorial,Komodakis07mrfoptimization}. 
+
+Note that a similar approach can also be used for methods that do
+not unroll the full graph. For example, quantified terms can have
+a \texttt{separate} method for Cutting Plane Inference~\cite{riedel08improving}
+that returns all factors not \emph{maximally satisfied} in a given
+world.  
 
 
 \section{Conclusion}
 
-We have presented \lang{}, an object-oriented framework for declarative
-probabilistic programming with undirected models. It supports user-provided
-extensions and is centered around a small set of interface definition
-that allow extensions to provide their semantics (through the \texttt{eval}
-method) and suitable inference routines (e.g., through the \texttt{message}
-method). We believe that this approach will make probabilistic programming
-with undirected models more applicable to real-world problems (such
-as dependency parsing) because we can leverage existing specialized
-as well as generic means of inference. 
+We have presented \lang{}, an object-oriented library for probabilistic
+programming languages that grow. Crucially, language extensions can
+come with specialized inference routines that \lang{} can leverage.
+We believe that this approach will make probabilistic programming
+with undirected models more applicable to real-world problems.
+
+
+\subsubsection*{Acknowledgments}
+
+This work was supported in part by the CIIR, in part by SRI International
+subcontract \#27-001338 and ARFL prime contract \#FA8750-09-C-0181,
+and in part by UPenn NSF medium IIS-0803847. Any opinions, findings
+and conclusions or recommendations expressed in this material are
+the author's and do not necessarily reflect those of the sponsor.
 
 {\footnotesize \bibliographystyle{aaai}
 \bibliography{/Users/riedelcastro/projects/papers.fresh/bibtex/riedel}
 }{\footnotesize \par}
-
-
 
 
 \end{document}
