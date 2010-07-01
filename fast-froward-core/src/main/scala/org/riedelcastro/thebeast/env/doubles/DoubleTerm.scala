@@ -20,8 +20,8 @@ trait DoubleTerm extends BoundedTerm[Double] {
 
   def *(rhs: VectorTerm) = VectorScalarApp(rhs, this)
 
-  def marginalize(incoming: Beliefs[Any,EnvVar[Any]]): Beliefs[Any,EnvVar[Any]] = {
-    ExhaustiveMarginalInference.marginalize(this,incoming)
+  def marginalize(incoming: Beliefs[Any, EnvVar[Any]]): Beliefs[Any, EnvVar[Any]] = {
+    ExhaustiveMarginalInference.marginalize(this, incoming)
   }
 
   //def ground(env:Env) : DoubleTerm = super.ground(env).asInstanceOf[DoubleTerm]
@@ -32,12 +32,12 @@ trait DoubleTerm extends BoundedTerm[Double] {
 
   def flatten: DoubleTerm = this
 
-  def apply(variables:EnvVar[_]*) = {
-    Objective(Set() ++ variables,this)
+  def apply(variables: EnvVar[_]*) = {
+    Objective(Set() ++ variables, this)
   }
 
-  def ?(variables:EnvVar[_]*) = {
-    Objective(Set() ++ variables,this)
+  def ?(variables: EnvVar[_]*) = {
+    Objective(Set() ++ variables, this)
   }
 
 }
@@ -113,10 +113,10 @@ case class Sum[+T <: DoubleTerm](override val args: Seq[T]) extends Fold[Double]
   override def simplify: DoubleTerm = Sum(args.map(_.simplify))
 }
 
-case class SumOverGroundings[+T<:DoubleTerm](term:T,envs:Seq[Env])
+case class SumOverGroundings[+T <: DoubleTerm](term: T, envs: Seq[Env])
         extends Sum[DoubleTerm](envs.map(term.ground(_)))
 
-case class ProdOverGroundings[+T<:DoubleTerm](term:T,envs:Seq[Env])
+case class ProdOverGroundings[+T <: DoubleTerm](term: T, envs: Seq[Env])
         extends Multiplication[DoubleTerm](envs.map(term.ground(_)))
 
 object SumHelper {
@@ -147,7 +147,7 @@ case class QuantifiedSum[T](override val variable: Var[T], override val formula:
 
   override def ground(env: Env) = unroll.ground(env)
 
-  override def simplify = QuantifiedSum(variable,formula.simplify)
+  override def simplify = QuantifiedSum(variable, formula.simplify)
 }
 
 case class QuantifiedMultiplication[T](override val variable: Var[T], override val formula: DoubleTerm)
@@ -161,7 +161,7 @@ case class QuantifiedMultiplication[T](override val variable: Var[T], override v
 
   override def ground(env: Env) = unroll.ground(env)
 
-  override def simplify = QuantifiedMultiplication(variable,formula.simplify)
+  override def simplify = QuantifiedMultiplication(variable, formula.simplify)
 }
 
 
@@ -212,14 +212,18 @@ case class Normalize(arg: DoubleTerm) extends DoubleTerm {
   //todo
   def values = Values(0.0, 1.0)
 
+  private var sum = Math.NEG_INF_DOUBLE
+
   //todo: simplify of DoubleTerm should return DoubleTerm
   def simplify = null //Normalize(arg.simplify)
 
   def eval(env: Env): Option[Double] = {
-    var sum = 0.0
-    Env.forall(variables) {
-      x => {
-        arg.eval(x) match {case None => return None; case Some(result) => sum += result;}
+    if (sum == Math.NEG_INF_DOUBLE) {
+      sum = 0.0
+      Env.forall(variables) {
+        x => {
+          arg.eval(x) match {case None => return None; case Some(result) => sum += result;}
+        }
       }
     }
     arg.eval(env).map(_ / sum)
@@ -264,12 +268,12 @@ case class Uniform(from: DoubleTerm, to: DoubleTerm) extends DoubleTerm {
 
 }
 
-case class Objective(override val hidden:Set[EnvVar[_]],override val term:DoubleTerm)
-        extends DependsOn[Double,DoubleTerm](term,hidden) with DoubleTerm {
+case class Objective(override val hidden: Set[EnvVar[_]], override val term: DoubleTerm)
+        extends DependsOn[Double, DoubleTerm](term, hidden) with DoubleTerm {
   def upperBound: Double = term.upperBound
 
 
-  override def ground(env: Env) = Objective(hidden,term.ground(env))
+  override def ground(env: Env) = Objective(hidden, term.ground(env))
 
   override def simplify = Objective(hidden, term.simplify)
 }

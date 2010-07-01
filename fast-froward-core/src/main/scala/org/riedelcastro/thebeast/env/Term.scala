@@ -1,6 +1,6 @@
 package org.riedelcastro.thebeast.env
 
-import booleans.Equality
+import booleans.{NotApp, Equality}
 import collection.immutable.Set
 
 
@@ -46,6 +46,11 @@ trait Term[+T] {
    * Return a term that evaluates to true iff this and that term evaluate to the same value
    */
   def ===[V >: T](that: Term[V]) = Equality(this, that)
+
+  /**
+   * Return a term that evaluates to true iff this and that term do not evaluate to the same value
+   */
+  def !==[V >: T](that: Term[V]) = NotApp(Equality(this, that))
 
   /**
    *  Are there no free variables in this term

@@ -11,10 +11,11 @@ import solve.SumProductBeliefPropagation
  * @author Sebastian Riedel
  */
 
-class DependencyParsingFixtures {
+class DependencyParsingFixtures(val maxLength:Int) {
+
+  def this() {this(5)}
+ 
   import env.TheBeastImplicits._
-  
-  val maxLength = 5
 
   val Tokens = Ints(0 until maxLength)
   //todo: make this stateless!
@@ -37,6 +38,7 @@ class DependencyParsingFixtures {
     sentence.close(word, true)
     sentence.close(pos, true)
     sentence.close(link, true)
+    sentence.close(token, true)
     sentence
   }
 

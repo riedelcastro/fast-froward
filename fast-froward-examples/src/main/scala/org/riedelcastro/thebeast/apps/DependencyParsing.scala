@@ -14,7 +14,7 @@ import collection.mutable.{HashMap, ArrayBuffer}
  */
 object DependencyParsing extends TheBeastEnv {
 
-  val maxLength = 50
+  val maxLength = 7
 
   val Tokens = Ints(0 until maxLength)
   val Words = new MutableValues[String]()
@@ -84,10 +84,10 @@ object DependencyParsing extends TheBeastEnv {
 
 
     //first order formulae
-    val bias = vectorSum(Tokens, Tokens) {
-      (h, m) =>
-        $(link(h, m)) * unit("bias")
-    }
+//    val bias = vectorSum(Tokens, Tokens) {
+//      (h, m) =>
+//        $(link(h, m)) * unit("bias")
+//    }
     val wordPair = vectorSum(Tokens, Tokens, Words, Words) {
       (h, m, h_word, m_word) =>
         $(word(h, h_word) && word(m, m_word) && link(h, m)) * unit(h_word, m_word)
@@ -101,9 +101,10 @@ object DependencyParsing extends TheBeastEnv {
 
     val weightVar = VectorVar("weights")
     //val linearModel = ((wordPair + posPair + bias) dot weightVar) + treeConstraint
-    val linearModel = ((wordPair + posPair + bias) dot weightVar)
+    val linearModel = ((wordPair + posPair) dot weightVar)
     val probModel = normalize(exp(linearModel) * ptree(link, token, 0, LessThan(Tokens)))
-
+    val mlModel = ptree(link, token, 0, LessThan(Tokens)).asLogic//normalize(exp(linearModel) * ptree(link, token, 0, LessThan(Tokens)).asLogic)
+    
     //some example data
     val sentence1 = new MutableEnv
     sentence1(length) = 5
@@ -118,6 +119,7 @@ object DependencyParsing extends TheBeastEnv {
 
     val weights = new Vector
     weights("bias") = -2.0
+    for (tag1 <- Tags; tag2 <- Tags) weights(tag1,tag2) = -5.0
     weights("NN", "DT") = 1.0
     weights("VB", "NN") = 1.0
     weights("Root", "VB") = 1.0
@@ -143,6 +145,11 @@ object DependencyParsing extends TheBeastEnv {
     }
     println(sum)
     println(ptree(link, token, 0, LessThan(Tokens)).asLogic)
+
+    val mlMarginals = bp.infer(mlModel.ground(sentence1.mask(Set(link))))
+    println(mlMarginals)
+
+
 
   }
 

@@ -4,7 +4,8 @@ import org.specs.Specification
 import org.riedelcastro.thebeast.DependencyParsingFixtures
 import org.specs.runner.{JUnit4}
 import org.riedelcastro.thebeast.env._
-import org.riedelcastro.thebeast.solve.ExhaustiveMarginalInference
+import org.riedelcastro.thebeast.solve.{SumProductBeliefPropagation, ExhaustiveMarginalInference}
+import org.riedelcastro.thebeast.util.Logging
 
 /**
  * @author sriedel
@@ -12,7 +13,7 @@ import org.riedelcastro.thebeast.solve.ExhaustiveMarginalInference
 
 class SpanningTreeConstraintTest extends JUnit4(SpanningTreeConstraintSpecification)
 object SpanningTreeConstraintSpecification extends Specification with TheBeastEnv {
-  val trees = Seq(
+  val trees = Seq(           
     List((0, 1), (0, 2), (0, 3)),
     List((0, 1), (1, 2), (0, 3)),
     List((0, 1), (3, 2), (0, 3)),
@@ -109,6 +110,70 @@ object SpanningTreeConstraintSpecification extends Specification with TheBeastEn
         exact.belief(FunAppVar(link,edge)).belief(true) must_== counts(edge)
       }
     }
+
+    "return 0 in logical form if the the graph has a vertices with multiple parents" in {
+      val fixtures = new DependencyParsingFixtures
+      import fixtures._
+      val sentence = createSentence(
+        List("root", "the", "man", "walks"),
+        List("root", "DT", "NN", "VB"),
+        List((0, 3), (1, 2), (3, 2)))
+      val constraint = new SpanningTreeConstraint(link, token, 0, LessThan(Tokens)).asLogic
+      sentence(constraint) must_== 0.0
+    }
+
+    "return 1 in logical form if the the graph is a spanning tree" in {
+      val fixtures = new DependencyParsingFixtures
+      import fixtures._
+      val sentence = createSentence(
+        List("Root", "The", "man", "is", "fast"),
+        List("Root", "DT", "NN", "VB", "AD"),
+        List((0, 3), (3, 2), (3, 4), (2, 1)))
+      val constraint = new SpanningTreeConstraint[Int](link, token, 0, LessThan(Tokens)).asLogic
+      sentence(constraint) must_== 1.0
+    }
+
+//    "return exact marginals in logical form with exhaustive inference" in {
+//      val fixtures = new DependencyParsingFixtures(3)
+//      import fixtures._
+//      val sentence = createSentence(
+//        List("root", "he", "walks"),
+//        List("root", "NN", "VB"),
+//        List((0, 2), (2, 1)))
+//      val constraint = normalize(new SpanningTreeConstraint(link, token, 0, LessThan(Tokens)).asLogic)
+//      val grounded = constraint.ground(sentence.mask(Set(link)))
+//      val incoming = new CompleteIgnorance[Any, EnvVar[Any]]
+//      println(grounded)
+//      val exact = ExhaustiveMarginalInference.marginalize(grounded, incoming)
+//      println(exact)
+//      //      for (edge <- counts.keySet) {
+////        exact.belief(FunAppVar(link,edge)).belief(true) must_== counts(edge)
+////      }
+//    }
+
+    "return sensible marginals in logical form with belief propagation" in {
+      val fixtures = new DependencyParsingFixtures(2)
+      import fixtures._
+      val sentence = createSentence(
+        List("root", "he"),
+        List("root", "NN"),
+        List((0, 1)))   
+//        List("root", "he", "walks"),
+//        List("root", "NN", "VB"),
+//        List((0, 2), (2, 1)))
+      val constraint = normalize(new SpanningTreeConstraint(link, token, 0, LessThan(Tokens)).asLogic)
+      val grounded = constraint.ground(sentence.mask(Set(link)))
+      println(grounded)
+      val bp = new SumProductBeliefPropagation
+      Logging.level = Logging.DEBUG
+      val marginals = bp.infer(grounded)
+      println(marginals)
+      println(bp.iterations)
+      //      for (edge <- counts.keySet) {
+//        exact.belief(FunAppVar(link,edge)).belief(true) must_== counts(edge)
+//      }
+    }
+
 
     "return exact marginals with DP inference" in {
       val fixtures = new DependencyParsingFixtures
