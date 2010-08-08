@@ -19,7 +19,7 @@ class FastFrowardCore(info: ProjectInfo) extends DefaultProject(info)
     var fileName = "%s/ff".format(outputPath.relativeString)
     log.info("Creating script %s".format(fileName))
     val file = new PrintStream(fileName)
-    file.println(ffScript.format(runClasspath.relativeString))
+    file.println(ffScript.format(runClasspath.absString))
     file.close
     None
   }
