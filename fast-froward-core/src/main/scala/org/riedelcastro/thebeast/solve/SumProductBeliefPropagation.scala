@@ -104,6 +104,7 @@ class SumProductBeliefPropagation extends MarginalInference with Trackable with 
     graph.addTerms(terms.map(DoubleTermOptimizer.optimize(_)))
     **|
 
+    debug("%d BP Factors: %s".format(graph.factors.size, graph.factors.mkString(",")))
     debug("%d BP Nodes: %s".format(graph.nodes.size, graph.nodes.mkString(",")))
 
     _iterations = 0

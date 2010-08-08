@@ -30,8 +30,9 @@ case class SpanningTreeConstraint[V](edges: Term[FunctionValue[(V, V), Boolean]]
     import GenericImplicits._
     val domain = vertices.values.asInstanceOf[FunctionValues[V, Boolean]].domain
     val uniqueHead = forall(domain, domain, domain) {
-      (h, i, o) => (vertices(i) && vertices(h) && vertices(o) && edges(h, i) && (o !== h)) ~> !edges(o, i)
+      (h, i, o) => (vertices(i) && vertices(h) && vertices(o) && edges(h, i) && order(h,o)) ~> !edges(o, i)
     }
+    
     val dominates = Predicate("dominates", TupleValues2(domain, domain))
     val linkAndDominates = forall(domain, domain) {
       (h, i) => vertices(i) && vertices(h) && edges(h, i) ~> dominates(h, i)

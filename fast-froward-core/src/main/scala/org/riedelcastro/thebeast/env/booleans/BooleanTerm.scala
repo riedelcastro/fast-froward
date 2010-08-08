@@ -15,6 +15,9 @@ trait BooleanTerm extends BoundedTerm[Boolean] {
 
   def &&(rhs: BooleanTerm) = AndApp(this, rhs)
 
+  def ||(rhs: BooleanTerm) = OrApp(this, rhs)
+
+
   def ~>(rhs: BooleanTerm) = ImpliesApp(this, rhs)
 
   def <~>(rhs: BooleanTerm) = EquivalenceApp(this, rhs)
@@ -321,6 +324,31 @@ case class Forall[T](override val variable: Var[T], override val formula: Boolea
 
 
   override def toString: String = "{forall %s: %s}".format(variable,formula)
+}
+
+case class Exists[T](override val variable: Var[T], override val formula: BooleanTerm)
+        extends Quantification(Constant(Or), variable, formula, Constant(false)) with BooleanTerm {
+  override lazy val unroll = {
+    val env = new MutableEnv
+    Disjunction(variable.values.map(value => {env += variable -> value; formula.ground(env)}).toSeq)
+  }
+
+  override def unrollUncertain = Disjunction(unroll.args.filter(arg => !arg.simplify.isGround))
+
+  def upperBound = unroll.upperBound
+
+  override def ground(env: Env) = Exists(variable,formula.ground(env.mask(Set(variable))))
+
+  override def simplify = Exists(variable,formula.simplify)
+
+  def flatten = this
+
+  def moveInNegation: BooleanTerm = this
+
+  def negate: BooleanTerm = NotApp(this)
+
+
+  override def toString: String = "{exists %s: %s}".format(variable,formula)
 }
 
 

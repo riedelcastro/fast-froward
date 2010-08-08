@@ -311,6 +311,11 @@ trait QuantificationShortCuts {
     Forall(variable, formula(variable))
   }
 
+  def exists[T](values: Values[T])(formula: Var[T] => BooleanTerm) = {
+    val variable = createVariable(values)
+    Exists(variable, formula(variable))
+  }
+
   def forall[T1, T2](v1: Values[T1], v2: Values[T2])
                     (formula: (Var[T1], Var[T2]) => BooleanTerm): Forall[T1] = {
     forall(v1) {x1 => forall(v2) {x2 => formula(x1, x2)}}
